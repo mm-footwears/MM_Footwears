@@ -1,0 +1,67 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+@font-face {
+    font-family: google_san;
+    src: url(./google_sans_font/4UaRrENHsxJlGDuGo1OIlJfC6l_24rlCK1Yo_Iq2vgCI.woff2);
+}
+
+body {
+    background-color: hsl(0, 0%, 5%);
+    color: hsl(0, 0%, 100%);
+    font-family: "google_san";
+    font-size: 14px;
+}
+
+#contact_us-Page {
+    width: 100%;
+    padding: 18px;
+}
+
+#contact_us-Page #topLogo-part {
+    margin: 30px auto 80px;
+    max-width: fit-content;
+    background-color: hsl(322, 100%, 36%);
+    padding: 8px;
+    border-radius: 18px;
+    box-shadow: 10px 10px 10px hsl(113, 100%, 36%);
+}
+
+#contact_us-Page #topLogo-part img {
+    width: 200px;
+}
+
+.handles-container {
+    background-color: hsl(0, 0%, 10%);
+    font-size: 24px;
+    padding: 24px;
+    margin: 10px auto 20px;
+    border-radius: 24px;
+    display: flex;
+    cursor: pointer;
+    transition: scale 0.3s ease-in-out;
+    max-width: 680px;
+}
+
+.handles-container:hover {
+    scale: 102%;
+} 
+
+.handles-container p {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: hsl(0, 0%, 100%);
+}
+
+.handles-container i {
+    font-size: 42px;
+}
+
+.handles-container .QR-Codes {
+    width: 70px;
+    margin: 10px 0 10px auto;
+}

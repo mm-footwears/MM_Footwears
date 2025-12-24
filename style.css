@@ -169,6 +169,14 @@ html, body {
     margin-top: 10px;
     display: block;
     font-weight: bold;
+    cursor: pointer;
+}
+
+#app-container .main_section #hero_section span #MM_blue {
+    background-color: hsl(322, 100%, 36%);
+    color: hsl(0, 0%, 98%);
+    padding: 0 2px;
+    border-radius: 3px;
 }
 
 #app-container .main_section #BG_shoe-container {
