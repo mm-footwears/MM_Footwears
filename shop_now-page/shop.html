@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market</title>
     <link rel="stylesheet" href="./shop.css">
+    <link rel="stylesheet" href="./cart.css">
     <link rel="stylesheet" href="../Compress-fontawesome-free-6.7.2-web/css/all.min.css">
     <link rel="icon" href="../MM_images/MM_logo_2d.png">
 </head>
@@ -16,9 +17,50 @@
         </div>
         <div id="board_section">
             <div id="shoe_container">
-                <div id="shoe_box"></div> <!-- test box 1 -->
+                <!-- <div id="shoe_box"></div> test box 1 -->
             </div>
         </div>
+
+
+
+
+
+        <!-- pop ups -----------------------------... -->
+        <!-- Cart Icon -->
+        <div id="cart-icon">
+        🛒 <span id="cart-count">0</span>
+        </div>
+
+        <!-- CART POPUP -->
+        <div id="cart-popup" class="hidden">
+        <div class="cart-header">Your Cart</div>
+
+        <div id="cart-items" class="cart-body"></div>
+
+        <div class="cart-footer">
+            <p id="cart-total">Total: ₦0</p>
+            <button id="pay-btn">Proceed to Pay</button>
+        </div>
+        </div>
+
+        <!-- PAYMENT MODAL -->
+        <div id="payment-modal" class="hidden">
+        <h3>Payment Details</h3>
+
+        <div class="payment-step" id="account-step">
+            <p><b>Bank:</b> Opay</p>
+            <p><b>Account No:</b> 7034221889</p>
+            <p><b>Name:</b> MM Footwears</p>
+            <button id="paid-btn">I've made payment</button>
+        </div>
+
+        <div class="payment-step hidden" id="upload-step">
+            <input type="file" id="payment-proof" accept="image/*">
+            <button id="continue-btn">Continue</button>
+        </div>
+        </div>
+
+
     </div>
     <script src="./shop.js"></script>
 </body>
