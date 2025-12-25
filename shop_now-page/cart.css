@@ -10,14 +10,22 @@
 #cart-popup,
 #payment-modal {
   position: fixed;
-  top: 70px;
+  top: 100px;
   right: 20px;
-  width: 300px;
+  width: 85%;
+  max-width: 420px;
   background: hsl(0, 0%, 18%);
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgb(0, 0, 0);
+  box-shadow: 0 10px 100px rgb(0, 0, 0);
   z-index: 1000;
+  font-size: 16px;
+  border: 8px solid hsl(198, 99%, 32%);
 }
+
+/* #cart-popup,
+#payment-modal::after {
+  create an triangle shape thing on top right of this div pointing to to cart icon
+} */
 
 .hidden {
   display: none;
@@ -25,23 +33,46 @@
 
 /* CART */
 .cart-header {
-  padding: 12px;
+  padding: 16px 16px 30px;
   font-weight: bold;
   border-bottom: 1px solid #555;
+  /* color: hsl(152, 99%, 32%); */
+  font-size: 22px;
+}
+
+#cart-prices {
+  color: hsl(152, 99%, 32%);
+}
+
+#remove-BTN {
+  color: red;
+  background-color: hsl(0, 0%, 5%);
+  border: none;
+  padding: 8px;
+  font-size: 14px;
 }
 
 .cart-body {
   /* max-height: 200px; */
   height: fit-content;
   min-height: 80px;
+  max-height: 380px;
   overflow-y: auto;
-  padding: 10px;
+  padding: 16px;
 }
 
 .cart-body div {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  border: 1px solid hsl(152, 99%, 32%);
+  padding: 6px;
+}
+
+#cart-total {
+  font-size: 24px;
+  margin: 0 0 40px;
 }
 
 .cart-footer {
@@ -51,11 +82,12 @@
 
 .cart-footer button {
   width: 100%;
-  padding: 8px;
+  padding: 16px;
   background: hsl(152, 99%, 32%);
   border: none;
   color: white;
   font-weight: bold;
+  font-size: 18px;
 }
 
 /* PAYMENT */
@@ -75,4 +107,86 @@
   border: none;
   color: white;
   font-weight: bold;
+}
+
+#account-step p b {
+  color: hsl(0, 0%, 0%);
+}
+
+#MM_account {
+  font-size: 24px;
+}
+
+#AccountNum {
+  font-size: 28px;
+  /* color: hsl(0, 0%, 90%); */
+  color: hsl(26, 99%, 40%);
+  font-weight: bold;
+}
+
+#copyBTN {
+  display: block;
+  background-color: hsl(0, 0%, 100%);
+  color: hsl(0, 0%, 30%);
+  border-radius: 10px;
+  font-weight: bold;
+  padding: 3px 8px 4px;
+  max-width: fit-content;
+  margin: 20px 0 50px auto;
+}
+
+#copyBTN:active {
+  scale: 110%;
+}
+
+#BankName a {
+  color: hsl(122, 99%, 32%);
+  font-weight: bold;
+  font-size: 24px;
+}
+
+#paid-btn {
+  margin: 150px 0 0 !important;
+  font-size: 18px !important;
+  padding: 14px !important;
+}
+
+#payment_msg {
+  background-color: hsl(0, 0%, 5%);
+  padding: 12px;
+  border-radius: 10px;
+  color: hsl(26, 99%, 40%);
+}
+
+.ReachToUsBTNs {
+  font-size: 18px;
+  font-weight: normal !important;
+  border-radius: 10px;
+  color: hsl(0, 0%, 100%);
+  text-decoration: none;
+  background-color: hsl(0, 0%, 5%);
+  padding: 14px;
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 10px;
+}
+
+.ReachToUsBTNs i {
+  font-size: 32px;
+  margin-right: 20px;
+}
+
+.ReachToUsBTNs .fa-whatsapp {
+  color: hsl(122, 99%, 32%);
+  font-weight: bold;
+}
+
+.ReachToUsBTNs .fa-google {
+  color: hsl(200, 89%, 50%);
+  /* font-weight: bold; */
+}
+
+.ReachToUsBTNs .fa-snapchat {
+  color: rgb(191, 197, 0);
+  font-weight: 900;
 }

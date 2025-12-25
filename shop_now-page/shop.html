@@ -48,17 +48,45 @@
         <h3>Payment Details</h3>
 
         <div class="payment-step" id="account-step">
-            <p><b>Bank:</b> Opay</p>
-            <p><b>Account No:</b> 7034221889</p>
-            <p><b>Name:</b> MM Footwears</p>
+            <p><b>Bank:</b> <span id="BankName"><a>O</a>pay</span></p>
+            <p><b id="MM_account">Account No:</b> <span id="AccountNum">7043318106</span><br><a id="copyBTN">copy</a></p>
+            <p><b>Name (Dir):</b> ROBERT UMARU MOSES</p>
             <button id="paid-btn">I've made payment</button>
         </div>
 
-        <div class="payment-step hidden" id="upload-step">
+        <!-- <div class="payment-step hidden" id="upload-step">
             <input type="file" id="payment-proof" accept="image/*">
             <button id="continue-btn">Continue</button>
+        </div> -->
+        <!-- </div> -->
+        <div class="payment-step hidden" id="upload-step">
+            <p id="payment_msg" style="margin-bottom:50px;">
+                Payment Completed? Please provide a screenshot of your payment to us below to confirm payment and arrange pickup/delivery.
+            </p>
+
+            <a class="ReachToUsBTNs" id="WhatsAppContact"
+                href="https://wa.me/qr/2U366PQUSXB2B1"
+                target="_blank"
+                style="display:block; margin-bottom:8px; font-weight:bold;"
+            >
+                <i class="fab fa-whatsapp"></i> Send slip via WhatsApp
+            </a>
+
+            <a class="ReachToUsBTNs" id="EmailContact"
+                href="mailto:mmfootwears231@gmail.com?subject=Payment Confirmation (MM Footwears)"
+                style="display:block; font-weight:bold;"
+            >
+                <i class="fab fa-google"></i> Send slip via Mail
+            </a>
+
+            <a class="ReachToUsBTNs" id="SnapContact"
+                href="https://www.snapchat.com/add/robert_mose5368?share_id=DHQtcuJfR9-zVxxklXebhg&locale=en_NG"
+                style="display:block; font-weight:bold;"
+            >
+                <i class="fab fa-snapchat"></i> Send slip via SnapChat
+            </a>
         </div>
-        </div>
+
 
 
     </div>

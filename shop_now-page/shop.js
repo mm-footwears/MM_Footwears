@@ -1,102 +1,26 @@
-// document.addEventListener('DOMContentLoaded', () => {
-//   const shoeContainer = document.getElementById('shoe_container');
-//   const cartIcon = document.getElementById('cart-icon');
-//   const cartPopup = document.getElementById('cart-popup');
-//   const cartItemsDiv = document.getElementById('cart-items');
-//   const cartCount = document.getElementById('cart-count');
-//   const cartTotal = document.getElementById('cart-total');
-
-//   const paymentModal = document.getElementById('payment-modal');
-//   const paidBtn = document.getElementById('paid-btn');
-//   const uploadSection = document.getElementById('upload-section');
-//   const continueBtn = document.getElementById('continue-btn');
-
-//   let cart = [];
-
-//   // FETCH SHOES
-//   fetch('http://localhost:3000/api/shoes')
-//     .then(res => res.json())
-//     .then(shoes => {
-//       shoeContainer.innerHTML = '';
-
-//       if (!shoes.length) {
-//         shoeContainer.innerHTML =
-//           `<h1 style="margin:auto;">NO SHOES AVAILABLE AT THIS MOMENT</h1>`;
-//         return;
-//       }
-
-//       shoes.forEach(shoe => {
-//         const div = document.createElement('div');
-//         // div.className = 'shoeBoxesElement';
-//         div.classList.add('shoeBoxesElement');
-//         div.innerHTML = `
-//           <div id="shoeIMG-Container">
-//             <img src="${shoe.image}">
-//           </div>
-//           <p id="price">₦${shoe.price}</p>
-//           <p id="info">Info: ${shoe.info}</p>
-//           <button class="buy-BTN">Buy Now</button>
-//         `;
-
-//         div.querySelector('.buy-BTN').onclick = () => addToCart(shoe);
-//         shoeContainer.appendChild(div);
-//       });
-//     });
-
-//   function addToCart(shoe) {
-//     cart.push(shoe);
-//     updateCart();
-//   }
-
-//   function updateCart() {
-//     cartItemsDiv.innerHTML = '';
-//     let total = 0;
-
-//     cart.forEach((item, i) => {
-//       total += item.price;
-//       cartItemsDiv.innerHTML += `
-//         <div>
-//           <span>₦${item.price}</span>
-//           <button onclick="removeItem(${i})">✖</button>
-//         </div>
-//       `;
-//     });
-
-//     cartCount.textContent = cart.length;
-//     cartTotal.textContent = `Total: ₦${total}`;
-//   }
-
-//   window.removeItem = index => {
-//     cart.splice(index, 1);
-//     updateCart();
-//   };
-
-//   cartIcon.onclick = () => cartPopup.classList.toggle('hidden');
-
-//   document.getElementById('pay-btn').onclick = () => {
-//     paymentModal.classList.remove('hidden');
-//   };
-
-//   paidBtn.onclick = () => {
-//     uploadSection.classList.remove('hidden');
-//   };
-
-//   continueBtn.onclick = () => {
-//     alert('Attach your payment screenshot to mmFootwears email (or reach to us on contact page with your screenshot)');
-
-//     // EMAIL
-//     window.location.href =
-//       `mailto:mmfootwears231@gmail.com?subject=I%20Just%20Made%20a%20Payment%20(MMFootwears)&body=Please%20find%20my%20payment%20screenshot%20attached.`;
-
-//     // WHATSAPP
-//     // window.open(
-//     //   'https://wa.me/234XXXXXXXXXX?text=Hello%20MM%20Footwears,%20I%20just%20made%20a%20payment.%20Screenshot%20attached.',
-//     //   '_blank'
-//     // );
-//   };
-// });
-
 document.addEventListener('DOMContentLoaded', () => {
+  /* =========================
+     USER SESSION (NO CLASH)
+  ========================== */
+  const USER_ID_KEY = 'mm_user_id';
+  let userId = localStorage.getItem(USER_ID_KEY);
+
+  if (!userId) {
+    userId = 'MM-' + crypto.randomUUID();
+    localStorage.setItem(USER_ID_KEY, userId);
+  }
+
+  const CART_KEY = `mm_cart_${userId}`;
+
+  const getCart = () =>
+    JSON.parse(localStorage.getItem(CART_KEY)) || [];
+
+  const saveCart = cart =>
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+
+  /* =========================
+     DOM ELEMENTS
+  ========================== */
   const shoeContainer = document.getElementById('shoe_container');
   const cartIcon = document.getElementById('cart-icon');
   const cartPopup = document.getElementById('cart-popup');
@@ -105,14 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const cartTotal = document.getElementById('cart-total');
 
   const paymentModal = document.getElementById('payment-modal');
-  const paidBtn = document.getElementById('paid-btn');
-  const uploadStep = document.getElementById('upload-step');
-  const continueBtn = document.getElementById('continue-btn');
+  const bankStep = document.getElementById('account-step');
+  const contactStep = document.getElementById('upload-step');
 
-  let cart = [];
+  const payBtn = document.getElementById('pay-btn');
+  const nextBtn = document.getElementById('paid-btn');
 
-  // FETCH SHOES
-  // fetch('http://localhost:3000/api/shoes')
+  /* =========================
+     FETCH SHOES
+  ========================== */
   fetch('https://mm-footwears-admin.onrender.com/api/shoes')
     .then(res => res.json())
     .then(shoes => {
@@ -125,43 +50,59 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       shoes.forEach(shoe => {
-        const div = document.createElement('div');
-        div.className = 'shoeBoxesElement';
-        div.innerHTML = `
+        const box = document.createElement('div');
+        box.className = 'shoeBoxesElement';
+
+        box.innerHTML = `
           <div id="shoeIMG-Container">
             <img src="${shoe.image}">
           </div>
+          <p id="name">${shoe.name}</p>
           <p id="price">₦${shoe.price}</p>
           <p id="info">${shoe.info}</p>
           <button class="buy-BTN">Buy Now</button>
         `;
 
-        div.querySelector('.buy-BTN').onclick = () => addToCart(shoe);
-        shoeContainer.appendChild(div);
+        box.querySelector('.buy-BTN').onclick = () => {
+          addToCart(shoe);
+          alert("Item added to your cart");
+        };
+
+        shoeContainer.appendChild(box);
       });
     });
 
+  /* =========================
+     CART LOGIC
+  ========================== */
   function addToCart(shoe) {
+    const cart = getCart();
     cart.push(shoe);
+    saveCart(cart);
     renderCart();
   }
 
   function renderCart() {
+    const cart = getCart();
     cartItems.innerHTML = '';
+
     let total = 0;
 
     cart.forEach((item, index) => {
-      total += item.price;
+      total += Number(item.price);
+
       const row = document.createElement('div');
       row.innerHTML = `
-        <span>₦${item.price}</span><br>
-        <span>₦${item.info}</span>
-        <button data-index="${index}">✖</button>
+        <span>${item.name} — ₦ <a id="cart-prices">${item.price}</a></span>
+        <button id="remove-BTN">Remove Item ✖</button>
       `;
+
       row.querySelector('button').onclick = () => {
         cart.splice(index, 1);
+        saveCart(cart);
         renderCart();
       };
+
       cartItems.appendChild(row);
     });
 
@@ -169,30 +110,72 @@ document.addEventListener('DOMContentLoaded', () => {
     cartTotal.textContent = `Total: ₦${total}`;
   }
 
-  cartIcon.onclick = () => {
+  renderCart();
+
+  /* =========================
+     UI FLOW
+  ========================== */
+  cartIcon.onclick = (e) => {
+    e.stopPropagation(); // prevents immediate close
     cartPopup.classList.toggle('hidden');
     paymentModal.classList.add('hidden');
   };
 
-  document.getElementById('pay-btn').onclick = () => {
+  cartPopup.onclick = (e) => {
+    e.stopPropagation();
+  };
+
+
+  payBtn.onclick = () => {
     cartPopup.classList.add('hidden');
     paymentModal.classList.remove('hidden');
-    uploadStep.classList.add('hidden');
+    bankStep.classList.remove('hidden');
+    contactStep.classList.add('hidden');
   };
 
-  paidBtn.onclick = () => {
-    uploadStep.classList.remove('hidden');
+  nextBtn.onclick = () => {
+    bankStep.classList.add('hidden');
+    contactStep.classList.remove('hidden');
   };
 
-  continueBtn.onclick = () => {
-    alert('Please attach screenshot manually');
 
-    window.location.href =
-      `mailto:mmfootwears231@gmail.com?subject=I%20Just%20Made%20a%20Payment%20(MMFootwears)`;
+  document.addEventListener('click', (e) => {
+    if (cartPopup.classList.contains('hidden')) return;
 
-    // window.open(
-    //   'https://wa.me/234XXXXXXXXXX?text=Hello%20MM%20Footwears,%20I%20have%20completed%20payment.',
-    //   '_blank'
-    // );
-  };
+    const clickedInsideCart = cartPopup.contains(e.target);
+    const clickedCartIcon = cartIcon.contains(e.target);
+
+    if (!clickedInsideCart && !clickedCartIcon) {
+      cartPopup.classList.add('hidden');
+    }
+  });
+
+  const copyBtn = document.getElementById('copyBTN');
+  const accountNumEl = document.getElementById('AccountNum');
+
+  copyBtn.addEventListener('click', async () => {
+    const accountNumber = accountNumEl.textContent.trim();
+
+    try {
+      await navigator.clipboard.writeText(accountNumber);
+      copyBtn.textContent = 'Copied!';
+      
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy';
+      }, 1500);
+    } catch (err) {
+      // Fallback for older browsers
+      const tempInput = document.createElement('input');
+      tempInput.value = accountNumber;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy';
+      }, 1500);
+    }
+  });
 });
