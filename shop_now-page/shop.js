@@ -40,39 +40,77 @@ document.addEventListener('DOMContentLoaded', () => {
   /* =========================
      FETCH SHOES
   ========================== */
-  fetch('https://mm-footwears-admin.onrender.com/api/shoes')
-    .then(res => res.json())
-    .then(shoes => {
-      shoeContainer.innerHTML = '';
+  async function fetchShoes() {
+    shoeContainer.innerHTML = `<p style="text-align:center;">Loading shoes...</p>`;
+    
+    try {
+      const res = await fetch('https://mm-footwears-admin.onrender.com/api/shoes');
+      const shoes = await res.json();
 
       if (!shoes.length) {
-        shoeContainer.innerHTML =
-          `<h1 style="margin:auto;">NO SHOES AVAILABLE AT THIS MOMENT</h1>`;
+        shoeContainer.innerHTML = `<h1 style="margin:auto;">NO SHOES AVAILABLE AT THIS MOMENT</h1>`;
         return;
       }
 
+      shoeContainer.innerHTML = '';
       shoes.forEach(shoe => {
         const box = document.createElement('div');
         box.className = 'shoeBoxesElement';
-
         box.innerHTML = `
-          <div id="shoeIMG-Container">
-            <img src="${shoe.image}">
-          </div>
+          <div id="shoeIMG-Container"><img src="${shoe.image}" loading="lazy"></div>
           <p id="name">${shoe.name}</p>
           <p id="price">₦${formatPrice(shoe.price)}</p>
           <p id="info">${shoe.info}</p>
           <button class="buy-BTN">Buy Now</button>
         `;
-
         box.querySelector('.buy-BTN').onclick = () => {
           addToCart(shoe);
           alert("Item added to your cart");
         };
-
         shoeContainer.appendChild(box);
       });
-    });
+
+    } catch (err) {
+      console.error(err);
+      shoeContainer.innerHTML = `<p style="text-align:center;color:red;">Failed to load shoes. Please try again.</p>`;
+    }
+  }
+
+  fetchShoes();
+
+  // fetch('https://mm-footwears-admin.onrender.com/api/shoes')
+  //   .then(res => res.json())
+  //   .then(shoes => {
+  //     shoeContainer.innerHTML = '';
+
+  //     if (!shoes.length) {
+  //       shoeContainer.innerHTML =
+  //         `<h1 style="margin:auto;">NO SHOES AVAILABLE AT THIS MOMENT</h1>`;
+  //       return;
+  //     }
+
+  //     shoes.forEach(shoe => {
+  //       const box = document.createElement('div');
+  //       box.className = 'shoeBoxesElement';
+
+  //       box.innerHTML = `
+  //         <div id="shoeIMG-Container">
+  //           <img src="${shoe.image}">
+  //         </div>
+  //         <p id="name">${shoe.name}</p>
+  //         <p id="price">₦${formatPrice(shoe.price)}</p>
+  //         <p id="info">${shoe.info}</p>
+  //         <button class="buy-BTN">Buy Now</button>
+  //       `;
+
+  //       box.querySelector('.buy-BTN').onclick = () => {
+  //         addToCart(shoe);
+  //         alert("Item added to your cart");
+  //       };
+
+  //       shoeContainer.appendChild(box);
+  //     });
+  //   });
 
   /* =========================
      CART LOGIC
