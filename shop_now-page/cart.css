@@ -10,7 +10,7 @@
 #cart-popup,
 #payment-modal {
   position: fixed;
-  top: 100px;
+  top: 70px;
   right: 20px;
   width: 85%;
   max-width: 420px;
@@ -56,7 +56,7 @@
   /* max-height: 200px; */
   height: fit-content;
   min-height: 80px;
-  max-height: 380px;
+  max-height: 250px;
   overflow-y: auto;
   padding: 16px;
 }
