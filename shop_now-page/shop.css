@@ -85,10 +85,14 @@ html, body {
     max-height: 120px;
     display: flex;
     justify-content: center;
+    min-height: 115px;
 }
 
 #shop_container .shoeBoxesElement img {
-    height: 100%;
+    width: fit-content;
+    max-width: 100%;
+    height: fit-content;
+    max-height: 100%;
 }
 
 #shop_container .shoeBoxesElement #price {
