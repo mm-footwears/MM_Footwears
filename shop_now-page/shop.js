@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const formatPrice = amount =>
+  new Intl.NumberFormat('en-NG').format(amount);
   /* =========================
      USER SESSION (NO CLASH)
   ========================== */
@@ -48,9 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
           `<h1 style="margin:auto;">NO SHOES AVAILABLE AT THIS MOMENT</h1>`;
         return;
       }
-
-      const formatPrice = amount =>
-      new Intl.NumberFormat('en-NG').format(amount);
 
       shoes.forEach(shoe => {
         const box = document.createElement('div');
