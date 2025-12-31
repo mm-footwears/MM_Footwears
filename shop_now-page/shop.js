@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const formatPrice = amount =>
+      new Intl.NumberFormat('en-NG').format(amount);
+
       shoes.forEach(shoe => {
         const box = document.createElement('div');
         box.className = 'shoeBoxesElement';
@@ -58,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <img src="${shoe.image}">
           </div>
           <p id="name">${shoe.name}</p>
-          <p id="price">₦${shoe.price}</p>
+          <p id="price">₦${formatPrice(shoe.price)}</p>
           <p id="info">${shoe.info}</p>
           <button class="buy-BTN">Buy Now</button>
         `;
@@ -93,7 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const row = document.createElement('div');
       row.innerHTML = `
-        <span>${item.name} — ₦ <a id="cart-prices">${item.price}</a></span>
+        <span>
+          ${item.name} — ₦
+          <a id="cart-prices">${formatPrice(item.price)}</a>
+        </span>
+
         <button id="remove-BTN">Remove Item ✖</button>
       `;
 
@@ -107,7 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     cartCount.textContent = cart.length;
-    cartTotal.textContent = `Total: ₦${total}`;
+    // cartTotal.textContent = `Total: ₦${total}`;
+    cartTotal.textContent = `Total: ₦${formatPrice(total)}`;
   }
 
   renderCart();
