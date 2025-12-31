@@ -65,6 +65,18 @@ html, body {
     }
 }
 
+@media only screen and (max-width: 425px) {
+    #shop_container #board_section #shoe_container {
+        justify-content: space-between;
+    }
+}
+
+@media only screen and (max-width: 300px) {
+    #shop_container #board_section #shoe_container {
+        justify-content: center;
+    }
+}
+
 #shop_container .shoeBoxesElement {
     background-color: hsl(0, 0%, 20%);
     width: fit-content;
