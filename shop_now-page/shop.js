@@ -192,19 +192,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 1500);
     }
   });
-});
 
 
 
-const getCart = () =>
-  JSON.parse(localStorage.getItem(CART_KEY)) || [];
-
-const saveCart = cart =>
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
 
 
 
-function generatePaymentMessage() {
+
+
+  function generatePaymentMessage() {
   const cart = getCart();
 
   if (!cart.length) return '';
@@ -234,9 +230,10 @@ function generatePaymentMessage() {
 
   return `M&M Purchase - A customer just made a payment from your shoe site.
 
-Items: [${itemsText}]
+    Items: [${itemsText}]
 
-Total = ₦${formatPrice(total)}.
+    Total = ₦${formatPrice(total)}.
 
-You should recieve a message from them soon.`;
-}
+    You should recieve a message from them soon.`;
+  }
+});
