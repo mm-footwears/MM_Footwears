@@ -196,7 +196,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+const getCart = () =>
+  JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
+const saveCart = cart =>
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
 
 
 
