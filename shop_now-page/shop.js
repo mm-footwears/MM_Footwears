@@ -78,40 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fetchShoes();
 
-  // fetch('https://mm-footwears-admin.onrender.com/api/shoes')
-  //   .then(res => res.json())
-  //   .then(shoes => {
-  //     shoeContainer.innerHTML = '';
-
-  //     if (!shoes.length) {
-  //       shoeContainer.innerHTML =
-  //         `<h1 style="margin:auto;">NO SHOES AVAILABLE AT THIS MOMENT</h1>`;
-  //       return;
-  //     }
-
-  //     shoes.forEach(shoe => {
-  //       const box = document.createElement('div');
-  //       box.className = 'shoeBoxesElement';
-
-  //       box.innerHTML = `
-  //         <div id="shoeIMG-Container">
-  //           <img src="${shoe.image}">
-  //         </div>
-  //         <p id="name">${shoe.name}</p>
-  //         <p id="price">₦${formatPrice(shoe.price)}</p>
-  //         <p id="info">${shoe.info}</p>
-  //         <button class="buy-BTN">Buy Now</button>
-  //       `;
-
-  //       box.querySelector('.buy-BTN').onclick = () => {
-  //         addToCart(shoe);
-  //         alert("Item added to your cart");
-  //       };
-
-  //       shoeContainer.appendChild(box);
-  //     });
-  //   });
-
   /* =========================
      CART LOGIC
   ========================== */
@@ -181,6 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
   nextBtn.onclick = () => {
     bankStep.classList.add('hidden');
     contactStep.classList.remove('hidden');
+
+    const paymentMessage = generatePaymentMessage();
+    console.log(paymentMessage);
   };
 
 
@@ -224,3 +193,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+
+
+
+
+
+
+function generatePaymentMessage() {
+  const cart = getCart();
+
+  if (!cart.length) return '';
+
+  const itemMap = {};
+  let total = 0;
+
+  cart.forEach(item => {
+    total += Number(item.price);
+
+    if (!itemMap[item.name]) {
+      itemMap[item.name] = {
+        qty: 1,
+        price: Number(item.price)
+      };
+    } else {
+      itemMap[item.name].qty += 1;
+      itemMap[item.name].price += Number(item.price);
+    }
+  });
+
+  const itemsText = Object.entries(itemMap)
+    .map(([name, data]) =>
+      `${name}(${data.qty}-[₦${formatPrice(data.price)}])`
+    )
+    .join(', ');
+
+  return `M&M Purchase - A customer just made a payment from your shoe site.
+
+Items: [${itemsText}]
+
+Total = ₦${formatPrice(total)}.
+
+You should recieve a message from them soon.`;
+}
