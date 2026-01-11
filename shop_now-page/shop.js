@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
      FETCH SHOES
   ========================== */
   async function fetchShoes() {
-    shoeContainer.innerHTML = `<p style="text-align:center;">Loading shoes...</p>`;
+    shoeContainer.innerHTML = `<p style="text-align:center;">Loading shoes... Pls wait</p>`;
     
     try {
       const res = await fetch('https://mm-footwears-admin.onrender.com/api/shoes');
@@ -149,7 +149,23 @@ document.addEventListener('DOMContentLoaded', () => {
     contactStep.classList.remove('hidden');
 
     const paymentMessage = generatePaymentMessage();
-    console.log(paymentMessage);
+
+    emailjs.send(
+    'service_114saii',
+    'template_46vdtk5',
+    {
+      subject: 'New Payment - M&M Footwears',
+      time: new Date().toLocaleString(),
+      message: paymentMessage
+    }
+  )
+
+  .then(() => {
+    console.log('Payment email sent successfully');
+  })
+  .catch(err => {
+    console.error('Email failed:', err);
+  });
   };
 
 
