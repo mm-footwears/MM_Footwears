@@ -151,14 +151,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const paymentMessage = generatePaymentMessage();
 
     emailjs.send(
-    'service_114saii',
-    'template_46vdtk5',
-    {
-      subject: 'New Payment - M&M Footwears',
-      time: new Date().toLocaleString(),
-      message: paymentMessage
-    }
-  )
+      'service_114saii',
+      'template_46vdtk5',
+      {
+        subject: 'New Payment - M&M Footwears',
+        time: new Date().toLocaleString(),
+        message: paymentMessage
+      }
+    )
+
+    // console.log(paymentMessage)
 
   .then(() => {
     console.log('Payment email sent successfully');
@@ -230,7 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!itemMap[item.name]) {
       itemMap[item.name] = {
         qty: 1,
-        price: Number(item.price)
+        price: Number(item.price),
+        info: item.info || 'No description'
       };
     } else {
       itemMap[item.name].qty += 1;
@@ -240,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const itemsText = Object.entries(itemMap)
     .map(([name, data]) =>
-      `${name}(${data.qty}-[₦${formatPrice(data.price)}])`
+      `${name} - ${data.info}(${data.qty}-[₦${formatPrice(data.price)}])`
     )
     .join(', ');
 
