@@ -1,0 +1,163 @@
+/* =============================================
+   SHOE DETAIL OVERLAY — overlay.css
+   Add <link rel="stylesheet" href="./overlay.css"> to shop.html
+   ============================================= */
+
+#shoe-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: overlayFadeIn 0.25s ease;
+}
+
+#shoe-overlay.hidden {
+  display: none !important;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+#overlay-card {
+  position: relative;
+  background: hsl(0, 0%, 12%);
+  border: 1px solid hsl(0, 0%, 30%);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+  animation: cardSlideUp 0.28s ease;
+  z-index: 100000;
+}
+
+@keyframes cardSlideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+#overlay-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: hsl(0, 0%, 25%);
+  border: none;
+  color: hsl(0, 0%, 90%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  z-index: 100001;
+}
+
+#overlay-close-btn:hover {
+  background: hsl(0, 80%, 45%);
+}
+
+#overlay-close-btn:active {
+  scale: 1.1;
+}
+
+#overlay-img-wrap {
+  width: 100%;
+  min-height: 260px;
+  max-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(0, 0%, 8%);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  border: 1px solid hsl(0, 0%, 22%);
+}
+
+#overlay-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.3s ease;
+}
+
+#overlay-img.loading-img {
+  opacity: 0.2;
+}
+
+#overlay-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+#overlay-name {
+  font-size: 22px;
+  font-weight: bold;
+  color: hsl(0, 0%, 95%);
+  line-height: 1.3;
+}
+
+#overlay-price {
+  font-size: 28px;
+  font-weight: bold;
+  color: hsl(26, 99%, 40%);
+}
+
+#overlay-info {
+  font-size: 14px;
+  color: hsl(0, 0%, 60%);
+  line-height: 1.6;
+  border-left: 3px solid hsl(152, 99%, 32%);
+  padding-left: 10px;
+}
+
+#overlay-buy-btn {
+  margin-top: 16px;
+  padding: 14px;
+  background: hsl(152, 99%, 32%);
+  border: none;
+  color: hsl(0, 0%, 100%);
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+#overlay-buy-btn:hover {
+  background: hsl(152, 49%, 47%);
+}
+
+#overlay-buy-btn:active {
+  scale: 1.02;
+}
+
+/* Shoe cards — hover lift WITHOUT overlapping fixed header */
+#shop_container .shoeBoxesElement {
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+  z-index: 1;
+}
+
+#shop_container .shoeBoxesElement:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
