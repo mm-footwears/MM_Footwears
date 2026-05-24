@@ -148,8 +148,12 @@
   scale: 1.02;
 }
 
-/* Shoe cards — hover lift WITHOUT overlapping fixed header */
 #shop_container .shoeBoxesElement {
+    cursor: pointer;
+}
+
+/* Shoe cards — hover lift WITHOUT overlapping fixed header */
+/* #shop_container .shoeBoxesElement {
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   position: relative;
@@ -160,4 +164,4 @@
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   z-index: 2;
-}
+} */
