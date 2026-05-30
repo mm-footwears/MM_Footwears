@@ -67,6 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
     overlayPrice.textContent = `₦${formatPrice(shoe.price)}`;
     overlayInfo.textContent = shoe.info || '';
 
+    if (shoe.outOfStock) {
+      overlay.classList.add('out-of-stock');
+    } else {
+      overlay.classList.remove('out-of-stock');
+    }
+    overlayBuyBtn.disabled = shoe.outOfStock;
+
+    // show or remove out of stock notice
+    const existing = document.getElementById('out-of-stock-notice');
+    if (existing) existing.remove();
+    if (shoe.outOfStock) {
+      const notice = document.createElement('p');
+      notice.id = 'out-of-stock-notice';
+      notice.textContent = '⚠️ This item is currently out of stock';
+      overlayBuyBtn.insertAdjacentElement('beforebegin', notice);
+    }
+
     overlay.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   }
@@ -112,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    shoeContainer.innerHTML = `<p style="text-align:center;color:hsl(0,0%,60%);">Loading shoes...</p>`;
+    shoeContainer.innerHTML = `<p style="text-align:center;color:hsl(0,0%,60%);">Loading shoes... pls wait.</p>`;
 
     try {
       const res = await fetch(`${RAILWAY_API}/api/shoes`);
@@ -161,13 +178,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
       box.innerHTML = `
         <div id="shoeIMG-Container">
-          <img src="${thumbUrl}" loading="lazy" alt="${shoe.name}">
+          <img src="${thumbUrl}" loading="lazy" alt="${shoe.name}" style="${shoe.outOfStock ? 'filter:grayscale(100%)' : ''}">
         </div>
         <p id="name">${shoe.name}</p>
         <p id="price">₦${formatPrice(shoe.price)}</p>
         <p id="info">${shoe.info}</p>
-        <button class="buy-BTN">Buy Now</button>
+        <button class="buy-BTN ${shoe.outOfStock ? 'out-of-stock-BTN' : ''}" ${shoe.outOfStock ? 'disabled' : ''}>
+          ${shoe.outOfStock ? 'Out of Stock' : 'Buy Now'}
+        </button>
       `;
+      // box.innerHTML = `
+      //   <div id="shoeIMG-Container">
+      //     <img src="${thumbUrl}" loading="lazy" alt="${shoe.name}">
+      //   </div>
+      //   <p id="name">${shoe.name}</p>
+      //   <p id="price">₦${formatPrice(shoe.price)}</p>
+      //   <p id="info">${shoe.info}</p>
+      //   <button class="buy-BTN">Buy Now</button>
+      // `;
 
       // Click anywhere on card (except buy button) opens overlay
       box.addEventListener('click', (e) => {
