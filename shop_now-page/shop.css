@@ -136,3 +136,9 @@ html, body {
 #shop_container .shoeBoxesElement .buy-BTN:active {
     scale: 110%;
 }
+
+#shop_container .shoeBoxesElement .out-of-stock-BTN {
+  background-color: hsl(0, 0%, 30%);
+  color: hsl(0, 0%, 60%);
+  cursor: not-allowed;
+}
