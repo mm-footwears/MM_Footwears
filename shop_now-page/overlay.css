@@ -152,6 +152,39 @@
     cursor: pointer;
 }
 
+#shoe-overlay.out-of-stock #overlay-card {
+  border-color: hsl(0, 99%, 40%);
+}
+
+#shoe-overlay.out-of-stock #overlay-img-wrap {
+  filter: grayscale(100%);
+}
+
+#shoe-overlay.out-of-stock #overlay-name {
+  color: hsl(0, 0%, 60%);
+}
+
+#shoe-overlay.out-of-stock #overlay-price {
+  color: hsl(0, 0%, 50%);
+}
+
+#shoe-overlay.out-of-stock #overlay-buy-btn {
+  background-color: hsl(0, 0%, 25%);
+  color: hsl(0, 0%, 55%);
+  cursor: not-allowed;
+}
+
+#out-of-stock-notice {
+  text-align: center;
+  color: hsl(0, 99%, 50%);
+  font-size: 13px;
+  font-weight: bold;
+  padding: 8px;
+  border: 1px solid hsl(0, 99%, 40%);
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
 /* Shoe cards — hover lift WITHOUT overlapping fixed header */
 /* #shop_container .shoeBoxesElement {
   cursor: pointer;
