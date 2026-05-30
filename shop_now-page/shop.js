@@ -114,7 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const RAILWAY_API = 'https://mm-footwears-admintwo-production.up.railway.app';
   const CACHE_KEY = 'mm_shoes_cache';
   const CACHE_TIME_KEY = 'mm_shoes_cache_time';
-  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  // const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  // const CACHE_TTL = 30 * 1000; // 30 seconds
+  const CACHE_TTL = 15 * 1000; // 15 seconds
 
   async function fetchShoes() {
     // Try cache first for instant load
