@@ -173,7 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
     shoeContainer.innerHTML = '';
     shoes.forEach(shoe => {
       const box = document.createElement('div');
-      box.className = 'shoeBoxesElement';
+      // box.className = 'shoeBoxesElement';
+      box.className = `shoeBoxesElement ${shoe.outOfStock ? 'out-of-stock' : ''}`;
 
       // Compressed 480p thumbnail for fast card loading
       const thumbUrl = shoe.image.replace('/upload/', '/upload/w_480,q_auto,f_auto/');
