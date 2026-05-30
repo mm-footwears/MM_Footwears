@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       box.innerHTML = `
         <div id="shoeIMG-Container">
-          <img src="${thumbUrl}" loading="lazy" alt="${shoe.name}" style="${shoe.outOfStock ? 'filter:grayscale(100%)' : ''}">
+          <img src="${thumbUrl}" loading="lazy" alt="${shoe.name}">
         </div>
         <p id="name">${shoe.name}</p>
         <p id="price">₦${formatPrice(shoe.price)}</p>
