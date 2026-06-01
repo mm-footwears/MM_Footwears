@@ -287,10 +287,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Find delivery points via Nominatim
   async function findDeliveryPoints(address, district, lga, state) {
-    // Step 1: Geocode with 5-step fallbacks
+    // Nominatim requires a User-Agent header
+    const nominatimHeaders = {
+      'Accept-Language': 'en',
+      'User-Agent': 'MMFootwears/1.0 (mmfootwears231@gmail.com)'
+    };
+
+    // Step 1: Geocode with fallbacks + timeout per attempt
     let customerLat, customerLng;
     const attempts = [
-      `${address}, ${district}, ${lga}, ${state}, Nigeria`,
       `${district}, ${lga}, ${state}, Nigeria`,
       `${lga}, ${state}, Nigeria`,
       `${state}, Nigeria`
@@ -298,20 +303,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let found = false;
     for (const attempt of attempts) {
-      const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
-      const geoData = await geoRes.json();
-      if (geoData.length) {
-        customerLat = parseFloat(geoData[0].lat);
-        customerLng = parseFloat(geoData[0].lon);
-        found = true;
-        break;
+      try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 8000); // 8s per attempt
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
+          { headers: nominatimHeaders, signal: controller.signal }
+        );
+        clearTimeout(tid);
+        const geoData = await geoRes.json();
+        if (geoData.length) {
+          customerLat = parseFloat(geoData[0].lat);
+          customerLng = parseFloat(geoData[0].lon);
+          found = true;
+          break;
+        }
+      } catch (e) {
+        continue; // try next fallback
       }
     }
 
-    if (!found) throw new Error('Location not found. Try a nearby landmark or junction name instead.');
+    if (!found) throw new Error('Location not found. Try a different area name.');
 
     const results = [];
 
@@ -325,44 +337,24 @@ document.addEventListener('DOMContentLoaded', () => {
         lng: shopSettings.lng,
         distanceFromShop: 0,
         distanceFromCustomer: distanceToShop,
-        isShop: true,
-        fee: 0
+        isShop: true
       });
     }
 
-    // Step 2: Use Overpass API — query real OSM nodes near customer coords
-    // Search radius: 5km, looking for highway=junction, amenity=marketplace, highway=bus_stop, amenity=police
-    const radius = 5000; // meters
+    // Step 2: Overpass query
+    const radius = 5000;
     const overpassQuery = `
-      [out:json][timeout:15];
+      [out:json][timeout:20];
       (
+        node["place"~"neighbourhood|suburb|village|town"](around:${radius},${customerLat},${customerLng});
+        node["amenity"~"marketplace|police"](around:${radius},${customerLat},${customerLng});
         node["highway"="bus_stop"](around:${radius},${customerLat},${customerLng});
-        node["amenity"="marketplace"](around:${radius},${customerLat},${customerLng});
-        node["amenity"="police"](around:${radius},${customerLat},${customerLng});
-        node["junction"="yes"](around:${radius},${customerLat},${customerLng});
-        node["place"="neighbourhood"](around:${radius},${customerLat},${customerLng});
-        node["place"="suburb"](around:${radius},${customerLat},${customerLng});
-        node["place"="village"](around:${radius},${customerLat},${customerLng});
-        node["place"="town"](around:${radius},${customerLat},${customerLng});
       );
-      out body 30;
+      out body 25;
     `;
 
-    // const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-      
-    // const overpassRes = await fetch('https://overpass.kumi.systems/api/interpreter', {
-    //   method: 'POST',
-    //   body: 'data=' + encodeURIComponent(overpassQuery)
-    // });
-  
-    // const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ query: overpassQuery })
-    // });
-
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 35000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     let overpassData;
     try {
@@ -376,20 +368,17 @@ document.addEventListener('DOMContentLoaded', () => {
       overpassData = await overpassRes.json();
     } catch (err) {
       clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
-        throw new Error('Search timed out. Please try again.');
-      }
+      if (err.name === 'AbortError') throw new Error('Search timed out. Please try again.');
       throw err;
     }
 
-    // const overpassData = await overpassRes.json();
+    if (!overpassData || overpassData.message) {
+      throw new Error('Map service error. Please try again.');
+    }
 
     const elements = overpassData.elements || [];
-
-    // Filter: must have a name tag
     const named = elements.filter(e => e.tags && e.tags.name);
 
-    // Deduplicate by name
     const seenNames = new Set();
     const unique = named.filter(e => {
       const n = e.tags.name.toLowerCase();
@@ -400,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const withDistance = unique.map(e => ({
       name: e.tags.name,
-      fullName: e.tags.name + (e.tags['addr:full'] ? ', ' + e.tags['addr:full'] : ''),
+      fullName: e.tags.name,
       lat: e.lat,
       lng: e.lon,
       distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, e.lat, e.lon),
@@ -408,7 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
       isShop: false
     }));
 
-    // Sort by closest to customer
     withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
 
     const maxPoints = distanceToShop < 3 ? 3 : 4;
@@ -416,6 +404,136 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return results;
   }
+  // async function findDeliveryPoints(address, district, lga, state) {
+  //   // Step 1: Geocode with 5-step fallbacks
+  //   let customerLat, customerLng;
+  //   const attempts = [
+  //     `${address}, ${district}, ${lga}, ${state}, Nigeria`,
+  //     `${district}, ${lga}, ${state}, Nigeria`,
+  //     `${lga}, ${state}, Nigeria`,
+  //     `${state}, Nigeria`
+  //   ];
+
+  //   let found = false;
+  //   for (const attempt of attempts) {
+  //     const geoRes = await fetch(
+  //       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
+  //       { headers: { 'Accept-Language': 'en' } }
+  //     );
+  //     const geoData = await geoRes.json();
+  //     if (geoData.length) {
+  //       customerLat = parseFloat(geoData[0].lat);
+  //       customerLng = parseFloat(geoData[0].lon);
+  //       found = true;
+  //       break;
+  //     }
+  //   }
+
+  //   if (!found) throw new Error('Location not found. Try a nearby landmark or junction name instead.');
+
+  //   const results = [];
+
+  //   // Check if customer is within 3km of shop
+  //   const distanceToShop = calcDistance(customerLat, customerLng, shopSettings.lat, shopSettings.lng);
+  //   if (distanceToShop < 3) {
+  //     results.push({
+  //       name: 'M&M Footwears Shop (Pickup Only)',
+  //       fullName: 'M&M Footwears Shop',
+  //       lat: shopSettings.lat,
+  //       lng: shopSettings.lng,
+  //       distanceFromShop: 0,
+  //       distanceFromCustomer: distanceToShop,
+  //       isShop: true,
+  //       fee: 0
+  //     });
+  //   }
+
+  //   // Step 2: Use Overpass API — query real OSM nodes near customer coords
+  //   // Search radius: 5km, looking for highway=junction, amenity=marketplace, highway=bus_stop, amenity=police
+  //   const radius = 5000; // meters
+  //   const overpassQuery = `
+  //     [out:json][timeout:15];
+  //     (
+  //       node["highway"="bus_stop"](around:${radius},${customerLat},${customerLng});
+  //       node["amenity"="marketplace"](around:${radius},${customerLat},${customerLng});
+  //       node["amenity"="police"](around:${radius},${customerLat},${customerLng});
+  //       node["junction"="yes"](around:${radius},${customerLat},${customerLng});
+  //       node["place"="neighbourhood"](around:${radius},${customerLat},${customerLng});
+  //       node["place"="suburb"](around:${radius},${customerLat},${customerLng});
+  //       node["place"="village"](around:${radius},${customerLat},${customerLng});
+  //       node["place"="town"](around:${radius},${customerLat},${customerLng});
+  //     );
+  //     out body 30;
+  //   `;
+
+  //   // const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
+      
+  //   // const overpassRes = await fetch('https://overpass.kumi.systems/api/interpreter', {
+  //   //   method: 'POST',
+  //   //   body: 'data=' + encodeURIComponent(overpassQuery)
+  //   // });
+  
+  //   // const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
+  //   //   method: 'POST',
+  //   //   headers: { 'Content-Type': 'application/json' },
+  //   //   body: JSON.stringify({ query: overpassQuery })
+  //   // });
+
+  //   const controller = new AbortController();
+  //   const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+  //   let overpassData;
+  //   try {
+  //     const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ query: overpassQuery }),
+  //       signal: controller.signal
+  //     });
+  //     clearTimeout(timeoutId);
+  //     overpassData = await overpassRes.json();
+  //   } catch (err) {
+  //     clearTimeout(timeoutId);
+  //     if (err.name === 'AbortError') {
+  //       throw new Error('Search timed out. Please try again.');
+  //     }
+  //     throw err;
+  //   }
+
+  //   // const overpassData = await overpassRes.json();
+
+  //   const elements = overpassData.elements || [];
+
+  //   // Filter: must have a name tag
+  //   const named = elements.filter(e => e.tags && e.tags.name);
+
+  //   // Deduplicate by name
+  //   const seenNames = new Set();
+  //   const unique = named.filter(e => {
+  //     const n = e.tags.name.toLowerCase();
+  //     if (seenNames.has(n)) return false;
+  //     seenNames.add(n);
+  //     return true;
+  //   });
+
+  //   const withDistance = unique.map(e => ({
+  //     name: e.tags.name,
+  //     fullName: e.tags.name + (e.tags['addr:full'] ? ', ' + e.tags['addr:full'] : ''),
+  //     lat: e.lat,
+  //     lng: e.lon,
+  //     distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, e.lat, e.lon),
+  //     distanceFromCustomer: calcDistance(customerLat, customerLng, e.lat, e.lon),
+  //     isShop: false
+  //   }));
+
+  //   // Sort by closest to customer
+  //   withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
+
+  //   const maxPoints = distanceToShop < 3 ? 3 : 4;
+  //   results.push(...withDistance.slice(0, maxPoints));
+
+  //   return results;
+  // }
   // async function findDeliveryPoints(address, district, lga, state) {
   //   // Step 1: Geocode with 5-step fallbacks
   //   let customerLat, customerLng;
