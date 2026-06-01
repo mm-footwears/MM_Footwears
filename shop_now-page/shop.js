@@ -287,13 +287,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Find delivery points via Nominatim
   async function findDeliveryPoints(address, district, lga, state) {
-    // Nominatim requires a User-Agent header
     const nominatimHeaders = {
       'Accept-Language': 'en',
       'User-Agent': 'MMFootwears/1.0 (mmfootwears231@gmail.com)'
     };
 
-    // Step 1: Geocode with fallbacks + timeout per attempt
+    // Step 1: Geocode with district-aware fallbacks
     let customerLat, customerLng;
     const attempts = [
       `${district}, ${lga}, ${state}, Nigeria`,
@@ -305,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const attempt of attempts) {
       try {
         const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 8000); // 8s per attempt
+        const tid = setTimeout(() => controller.abort(), 8000);
         const geoRes = await fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
           { headers: nominatimHeaders, signal: controller.signal }
@@ -318,9 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
           found = true;
           break;
         }
-      } catch (e) {
-        continue; // try next fallback
-      }
+      } catch (e) { continue; }
     }
 
     if (!found) throw new Error('Location not found. Try a different area name.');
@@ -341,61 +338,43 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Step 2: Overpass query
-    const radius = 5000;
-    const overpassQuery = `
-      [out:json][timeout:20];
-      (
-        node["place"~"neighbourhood|suburb|village|town"](around:${radius},${customerLat},${customerLng});
-        node["amenity"~"marketplace|police"](around:${radius},${customerLat},${customerLng});
-        node["highway"="bus_stop"](around:${radius},${customerLat},${customerLng});
-      );
-      out body 25;
-    `;
+    // Step 2: Find nearby delivery points via Nominatim (same as working version)
+    const types = ['junction', 'bus_stop', 'marketplace', 'police'];
+    let allPoints = [];
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-    let overpassData;
-    try {
-      const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: overpassQuery }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      overpassData = await overpassRes.json();
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (err.name === 'AbortError') throw new Error('Search timed out. Please try again.');
-      throw err;
+    for (const type of types) {
+      try {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 8000);
+        const nearRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${type} ${lga} ${state} Nigeria`)}&format=json&limit=5&addressdetails=1`,
+          { headers: nominatimHeaders, signal: controller.signal }
+        );
+        clearTimeout(tid);
+        const nearData = await nearRes.json();
+        allPoints = allPoints.concat(nearData);
+      } catch (e) { continue; }
     }
 
-    if (!overpassData || overpassData.message) {
-      throw new Error('Map service error. Please try again.');
-    }
-
-    const elements = overpassData.elements || [];
-    const named = elements.filter(e => e.tags && e.tags.name);
-
-    const seenNames = new Set();
-    const unique = named.filter(e => {
-      const n = e.tags.name.toLowerCase();
-      if (seenNames.has(n)) return false;
-      seenNames.add(n);
+    // Deduplicate by place_id
+    const seen = new Set();
+    const unique = allPoints.filter(p => {
+      if (seen.has(p.place_id)) return false;
+      seen.add(p.place_id);
       return true;
     });
 
-    const withDistance = unique.map(e => ({
-      name: e.tags.name,
-      fullName: e.tags.name,
-      lat: e.lat,
-      lng: e.lon,
-      distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, e.lat, e.lon),
-      distanceFromCustomer: calcDistance(customerLat, customerLng, e.lat, e.lon),
-      isShop: false
-    }));
+    const withDistance = unique
+      .map(p => ({
+        name: p.display_name.split(',')[0],
+        fullName: p.display_name,
+        lat: parseFloat(p.lat),
+        lng: parseFloat(p.lon),
+        distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, parseFloat(p.lat), parseFloat(p.lon)),
+        distanceFromCustomer: calcDistance(customerLat, customerLng, parseFloat(p.lat), parseFloat(p.lon)),
+        isShop: false
+      }))
+      .filter(p => p.distanceFromCustomer <= 10);
 
     withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
 
