@@ -285,6 +285,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.ceil((distanceKm / 10) * shopSettings.pricePerTenKm);
   }
 
+
+
+
+
+
+
   // Find delivery points via Nominatim
   async function findDeliveryPoints(address, district, lga, state) {
     const nominatimHeaders = {
@@ -292,35 +298,33 @@ document.addEventListener('DOMContentLoaded', () => {
       'User-Agent': 'MMFootwears/1.0 (mmfootwears231@gmail.com)'
     };
 
-    // Step 1: Geocode with district-aware fallbacks
+    // Step 1: Geocode — district is the primary key, fast fallbacks
     let customerLat, customerLng;
-    const attempts = [
+    const geoAttempts = [
       `${district}, ${lga}, ${state}, Nigeria`,
       `${lga}, ${state}, Nigeria`,
       `${state}, Nigeria`
     ];
 
-    let found = false;
-    for (const attempt of attempts) {
+    for (const attempt of geoAttempts) {
       try {
-        const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 8000);
-        const geoRes = await fetch(
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
-          { headers: nominatimHeaders, signal: controller.signal }
+          { headers: nominatimHeaders, signal: ctrl.signal }
         );
         clearTimeout(tid);
-        const geoData = await geoRes.json();
-        if (geoData.length) {
-          customerLat = parseFloat(geoData[0].lat);
-          customerLng = parseFloat(geoData[0].lon);
-          found = true;
+        const data = await res.json();
+        if (data.length) {
+          customerLat = parseFloat(data[0].lat);
+          customerLng = parseFloat(data[0].lon);
           break;
         }
       } catch (e) { continue; }
     }
 
-    if (!found) throw new Error('Location not found. Try a different area name.');
+    if (!customerLat) throw new Error('Location not found. Try a different district name.');
 
     const results = [];
 
@@ -338,48 +342,99 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Step 2: Find nearby delivery points via Nominatim (same as working version)
-    const types = ['junction', 'bus_stop', 'marketplace', 'police'];
-    let allPoints = [];
+    // Step 2: Geographic radius search via Overpass — finds real mapped places near customer coords
+    let overpassSuccess = false;
+    const radius = 6000; // 6km radius
+    const overpassQuery = `
+      [out:json][timeout:25];
+      (
+        node["place"~"neighbourhood|suburb|village|town|quarter"](around:${radius},${customerLat},${customerLng});
+        node["amenity"~"marketplace|police|hospital|bank|fuel"](around:${radius},${customerLat},${customerLng});
+        node["highway"="bus_stop"](around:${radius},${customerLat},${customerLng});
+        node["shop"~"supermarket|mall|department_store"](around:${radius},${customerLat},${customerLng});
+      );
+      out body 30;
+    `;
 
-    for (const type of types) {
-      try {
-        const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 8000);
-        const nearRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${type} ${lga} ${state} Nigeria`)}&format=json&limit=5&addressdetails=1`,
-          { headers: nominatimHeaders, signal: controller.signal }
-        );
-        clearTimeout(tid);
-        const nearData = await nearRes.json();
-        allPoints = allPoints.concat(nearData);
-      } catch (e) { continue; }
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 22000);
+      const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: overpassQuery }),
+        signal: ctrl.signal
+      });
+      clearTimeout(tid);
+
+      if (overpassRes.ok) {
+        const overpassData = await overpassRes.json();
+        const elements = (overpassData.elements || []).filter(e => e.tags?.name);
+
+        const seenNames = new Set();
+        const unique = elements.filter(e => {
+          const n = e.tags.name.toLowerCase();
+          if (seenNames.has(n)) return false;
+          seenNames.add(n);
+          return true;
+        });
+
+        const withDistance = unique.map(e => ({
+          name: e.tags.name,
+          fullName: e.tags.name,
+          lat: e.lat,
+          lng: e.lon,
+          distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, e.lat, e.lon),
+          distanceFromCustomer: calcDistance(customerLat, customerLng, e.lat, e.lon),
+          isShop: false
+        }));
+
+        withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
+        const maxPoints = distanceToShop < 3 ? 3 : 4;
+        results.push(...withDistance.slice(0, maxPoints));
+        overpassSuccess = true;
+      }
+    } catch (e) {
+      console.warn('Overpass failed, falling back to Nominatim text search');
     }
 
-    // Deduplicate by place_id
-    const seen = new Set();
-    const unique = allPoints.filter(p => {
-      if (seen.has(p.place_id)) return false;
-      seen.add(p.place_id);
-      return true;
-    });
+    // Step 3: Nominatim fallback if Overpass failed and nothing found
+    if (!overpassSuccess && results.filter(r => !r.isShop).length === 0) {
+      const types = ['junction', 'bus_stop', 'marketplace', 'police'];
+      let allPoints = [];
 
-    const withDistance = unique
-      .map(p => ({
-        name: p.display_name.split(',')[0],
-        fullName: p.display_name,
-        lat: parseFloat(p.lat),
-        lng: parseFloat(p.lon),
-        distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, parseFloat(p.lat), parseFloat(p.lon)),
-        distanceFromCustomer: calcDistance(customerLat, customerLng, parseFloat(p.lat), parseFloat(p.lon)),
-        isShop: false
-      }))
-      .filter(p => p.distanceFromCustomer <= 10);
+      for (const type of types) {
+        try {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 8000);
+          const nearRes = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${type} ${district} ${lga} ${state} Nigeria`)}&format=json&limit=5`,
+            { headers: nominatimHeaders, signal: ctrl.signal }
+          );
+          clearTimeout(tid);
+          const nearData = await nearRes.json();
+          allPoints = allPoints.concat(nearData);
+        } catch (e) { continue; }
+      }
 
-    withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
+      const seen = new Set();
+      const withDistance = allPoints
+        .filter(p => { if (seen.has(p.place_id)) return false; seen.add(p.place_id); return true; })
+        .map(p => ({
+          name: p.display_name.split(',')[0],
+          fullName: p.display_name,
+          lat: parseFloat(p.lat),
+          lng: parseFloat(p.lon),
+          distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, parseFloat(p.lat), parseFloat(p.lon)),
+          distanceFromCustomer: calcDistance(customerLat, customerLng, parseFloat(p.lat), parseFloat(p.lon)),
+          isShop: false
+        }))
+        .filter(p => p.distanceFromCustomer <= 10);
 
-    const maxPoints = distanceToShop < 3 ? 3 : 4;
-    results.push(...withDistance.slice(0, maxPoints));
+      withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
+      const maxPoints = distanceToShop < 3 ? 3 : 4;
+      results.push(...withDistance.slice(0, maxPoints));
+    }
 
     return results;
   }
