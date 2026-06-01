@@ -348,10 +348,16 @@ document.addEventListener('DOMContentLoaded', () => {
       out body 30;
     `;
 
-    const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
+    // const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
+    const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
       method: 'POST',
-      body: 'data=' + encodeURIComponent(overpassQuery)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: overpassQuery })
     });
+    // const overpassRes = await fetch('https://overpass.kumi.systems/api/interpreter', {
+    //   method: 'POST',
+    //   body: 'data=' + encodeURIComponent(overpassQuery)
+    // });
     const overpassData = await overpassRes.json();
 
     const elements = overpassData.elements || [];
