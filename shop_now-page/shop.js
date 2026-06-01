@@ -331,8 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Step 2: Use Overpass API — query real OSM nodes near customer coords
-    // Search radius: 8km, looking for highway=junction, amenity=marketplace, highway=bus_stop, amenity=police
-    const radius = 8000; // meters
+    // Search radius: 5km, looking for highway=junction, amenity=marketplace, highway=bus_stop, amenity=police
+    const radius = 5000; // meters
     const overpassQuery = `
       [out:json][timeout:15];
       (
@@ -349,16 +349,40 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     // const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-    const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: overpassQuery })
-    });
+      
     // const overpassRes = await fetch('https://overpass.kumi.systems/api/interpreter', {
     //   method: 'POST',
     //   body: 'data=' + encodeURIComponent(overpassQuery)
     // });
-    const overpassData = await overpassRes.json();
+  
+    // const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ query: overpassQuery })
+    // });
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+    let overpassData;
+    try {
+      const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: overpassQuery }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      overpassData = await overpassRes.json();
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        throw new Error('Search timed out. Please try again.');
+      }
+      throw err;
+    }
+
+    // const overpassData = await overpassRes.json();
 
     const elements = overpassData.elements || [];
 
