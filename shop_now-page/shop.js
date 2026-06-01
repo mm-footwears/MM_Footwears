@@ -267,6 +267,168 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+  // Distance calculator (Haversine formula)
+  function calcDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth radius in KM
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c * 1.3; // 1.3 road multiplier
+  }
+
+  // Calculate waybill fee
+  function calcFee(distanceKm) {
+    return Math.ceil((distanceKm / 10) * shopSettings.pricePerTenKm);
+  }
+
+  // Find delivery points via Nominatim
+  async function findDeliveryPoints(address, lga, state) {
+    const query = `${address}, ${lga}, ${state}, Nigeria`;
+    const encodedQuery = encodeURIComponent(query);
+
+    // Step 1: Geocode customer address
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    const geoData = await geoRes.json();
+
+    if (!geoData.length) throw new Error('Address not found. Please be more specific.');
+
+    const customerLat = parseFloat(geoData[0].lat);
+    const customerLng = parseFloat(geoData[0].lon);
+
+    // Step 2: Find nearby busy public spots (junctions, markets, bus stops)
+    const types = ['junction', 'bus_stop', 'marketplace'];
+    let allPoints = [];
+
+    for (const type of types) {
+      const nearRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${type}+${lga}+${state}+Nigeria&format=json&limit=5&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const nearData = await nearRes.json();
+      allPoints = allPoints.concat(nearData);
+    }
+
+    // Remove duplicates and sort by distance to customer
+    const seen = new Set();
+    const unique = allPoints.filter(p => {
+      if (seen.has(p.place_id)) return false;
+      seen.add(p.place_id);
+      return true;
+    });
+
+    const withDistance = unique.map(p => ({
+      name: p.display_name.split(',')[0],
+      fullName: p.display_name,
+      lat: parseFloat(p.lat),
+      lng: parseFloat(p.lon),
+      distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, parseFloat(p.lat), parseFloat(p.lon)),
+      distanceFromCustomer: calcDistance(customerLat, customerLng, parseFloat(p.lat), parseFloat(p.lon))
+    }));
+
+    // Sort by closest to customer first
+    withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
+
+    // Return top 3
+    return withDistance.slice(0, 3);
+  }
+
+  // Handle Find Delivery Points button
+  document.getElementById('wb-find-btn').addEventListener('click', async () => {
+    const name = document.getElementById('wb-name').value.trim();
+    const phone = document.getElementById('wb-phone').value.trim();
+    const address = document.getElementById('wb-address').value.trim();
+    const lga = document.getElementById('wb-lga').value.trim();
+    const state = document.getElementById('wb-state').value.trim();
+
+    if (!name || !phone || !address || !lga || !state) {
+      alert('Please fill all delivery fields');
+      return;
+    }
+
+    const findBtn = document.getElementById('wb-find-btn');
+    const wbResults = document.getElementById('wb-results');
+
+    findBtn.textContent = 'Searching...';
+    findBtn.disabled = true;
+    wbResults.classList.add('hidden');
+    wbResults.innerHTML = '';
+
+    try {
+      const points = await findDeliveryPoints(address, lga, state);
+
+      if (!points.length) {
+        wbResults.innerHTML = `<p style="color:hsl(26,99%,40%);padding:10px;">No nearby meetup points found. Please contact Moker directly for delivery.</p>`;
+        wbResults.classList.remove('hidden');
+        return;
+      }
+
+      wbResults.innerHTML = `<p style="color:hsl(0,0%,60%);font-size:13px;margin-bottom:10px;">Select your nearest meetup point:</p>`;
+
+      points.forEach((point, i) => {
+        const fee = calcFee(point.distanceFromShop);
+        const card = document.createElement('div');
+        card.className = 'wb-point-card';
+        card.dataset.index = i;
+        card.innerHTML = `
+          <p class="wb-point-name">📍 ${point.name}</p>
+          <p class="wb-point-dist">~${point.distanceFromShop.toFixed(1)} km from shop</p>
+          <p class="wb-point-fee">Delivery fee: <span>₦${formatPrice(fee)}</span></p>
+        `;
+
+        card.addEventListener('click', () => {
+          // Deselect all
+          document.querySelectorAll('.wb-point-card').forEach(c => c.classList.remove('wb-point-selected'));
+          card.classList.add('wb-point-selected');
+
+          selectedDeliveryPoint = {
+            name: point.name,
+            fullName: point.fullName,
+            distanceKm: point.distanceFromShop.toFixed(1),
+            customerName: name,
+            customerPhone: phone,
+            customerAddress: `${address}, ${lga}, ${state}`,
+            fee
+          };
+          waybillFee = fee;
+          renderCart();
+
+          // Show selected summary
+          const wbSelected = document.getElementById('wb-selected');
+          wbSelected.innerHTML = `
+            <p style="color:hsl(152,99%,32%);font-size:13px;margin-top:10px;">
+              ✅ Delivery to <b>${point.name}</b> — ₦${formatPrice(fee)} added to total
+            </p>
+          `;
+          wbSelected.classList.remove('hidden');
+        });
+
+        wbResults.appendChild(card);
+      });
+
+      wbResults.classList.remove('hidden');
+
+    } catch (err) {
+      wbResults.innerHTML = `<p style="color:red;padding:10px;">⚠️ ${err.message}</p>`;
+      wbResults.classList.remove('hidden');
+    } finally {
+      findBtn.textContent = 'Find Delivery Points';
+      findBtn.disabled = false;
+    }
+  });
+
+
+
+
+
+
+
 
 
 
@@ -305,8 +467,15 @@ document.addEventListener('DOMContentLoaded', () => {
       cartItems.appendChild(row);
     });
 
+    // cartCount.textContent = cart.length;
+    // cartTotal.textContent = `Total: ₦${formatPrice(total)}`;
     cartCount.textContent = cart.length;
-    cartTotal.textContent = `Total: ₦${formatPrice(total)}`;
+    const grandTotal = total + waybillFee;
+    cartTotal.innerHTML = waybillFee > 0
+      ? `Shoes: ₦${formatPrice(total)}<br>
+        <span style="color:hsl(152,99%,32%);font-size:16px;">🚚 Delivery: ₦${formatPrice(waybillFee)}</span><br>
+        <b>Total: ₦${formatPrice(grandTotal)}</b>`
+      : `Total: ₦${formatPrice(total)}`;
   }
 
   renderCart();
@@ -397,12 +566,28 @@ document.addEventListener('DOMContentLoaded', () => {
       .map(([name, data]) => `${name} - ${data.info}(${data.qty}-[₦${formatPrice(data.price)}])`)
       .join(', ');
 
+    const deliveryInfo = selectedDeliveryPoint
+      ? `\n\n    Delivery: YES
+        Customer: ${selectedDeliveryPoint.customerName}
+        Phone: ${selectedDeliveryPoint.customerPhone}
+        Address: ${selectedDeliveryPoint.customerAddress}
+        Meetup Point: ${selectedDeliveryPoint.name}
+        Distance: ~${selectedDeliveryPoint.distanceKm} km
+        Delivery Fee: ₦${formatPrice(selectedDeliveryPoint.fee)}
+        Grand Total: ₦${formatPrice(total + selectedDeliveryPoint.fee)}`
+      : `\n\n    Delivery: NO — Customer will pick up`;
+
     return `M&M Purchase - A customer just made a payment from your shoe site.
 
     Items: [${itemsText}]
 
-    Total = ₦${formatPrice(total)}.
+    Shoes Total = ₦${formatPrice(total)}.${deliveryInfo}
 
     You should receive a message from them soon.`;
+    // Items: [${itemsText}]
+
+    // Total = ₦${formatPrice(total)}.
+
+    // You should receive a message from them soon.`;
   }
 });
