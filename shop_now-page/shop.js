@@ -112,6 +112,11 @@ document.addEventListener('DOMContentLoaded', () => {
      FETCH SHOES
   ========================== */
   const RAILWAY_API = 'https://mm-footwears-admintwo-production.up.railway.app';
+
+  let shopSettings = { lat: 10.468322, lng: 7.471292, pricePerTenKm: 500 };
+  let waybillFee = 0;
+  let selectedDeliveryPoint = null;
+
   const CACHE_KEY = 'mm_shoes_cache';
   const CACHE_TIME_KEY = 'mm_shoes_cache_time';
   // const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -218,6 +223,57 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   fetchShoes();
+
+
+
+
+
+
+
+  // ---------------------------------------------
+  // Waybill fee calculation based on distance
+  // ---------------------------------------------
+  // Fetch shop settings
+  async function fetchSettings() {
+    try {
+      const res = await fetch(`${RAILWAY_API}/api/settings`);
+      const data = await res.json();
+      shopSettings = data;
+    } catch (err) {
+      console.error('Failed to fetch settings, using defaults');
+    }
+  }
+
+  fetchSettings();
+
+  const waybillToggleBtn = document.getElementById('waybill-toggle-btn');
+  const waybillForm = document.getElementById('waybill-form');
+
+  waybillToggleBtn.addEventListener('click', () => {
+    waybillForm.classList.toggle('waybill-collapsed');
+    waybillToggleBtn.textContent = waybillForm.classList.contains('waybill-collapsed')
+      ? '🚚 Want delivery? Click here'
+      : '🚚 Hide delivery options';
+  });
+
+  document.getElementById('wb-skip-btn').addEventListener('click', () => {
+    waybillFee = 0;
+    selectedDeliveryPoint = null;
+    waybillForm.classList.add('waybill-collapsed');
+    waybillToggleBtn.textContent = '🚚 Want delivery? Click here';
+    renderCart();
+  });
+
+
+
+
+
+
+
+
+
+
+
 
   /* =========================
      CART LOGIC
