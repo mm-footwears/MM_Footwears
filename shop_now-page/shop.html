@@ -34,14 +34,34 @@
 
         <!-- CART POPUP -->
         <div id="cart-popup" class="hidden">
-        <div class="cart-header">Your Cart</div>
+            <div class="cart-header">Your Cart</div>
 
-        <div id="cart-items" class="cart-body"></div>
+            <div id="cart-items" class="cart-body"></div>
 
-        <div class="cart-footer">
-            <p id="cart-total">Total: ₦0</p>
-            <button id="pay-btn">Proceed to Pay</button>
-        </div>
+            <!-- WAYBILL SECTION --> 
+            <div id="waybill-section">
+            <div id="waybill-toggle-btn">
+                🚚 Want delivery? Click here
+            </div>
+            <div id="waybill-form" class="waybill-collapsed">
+                <div id="waybill-fields">
+                <input type="text" id="wb-name" placeholder="Your Full Name">
+                <input type="tel" id="wb-phone" placeholder="Phone Number">
+                <input type="text" id="wb-address" placeholder="Street Address">
+                <input type="text" id="wb-lga" placeholder="Local Government Area">
+                <input type="text" id="wb-state" placeholder="State">
+                <button id="wb-find-btn">Find Delivery Points</button>
+                </div>
+                <div id="wb-results" class="hidden"></div>
+                <div id="wb-selected" class="hidden"></div>
+                <button id="wb-skip-btn">I'll pick up myself</button>
+            </div>
+            </div>
+
+            <div class="cart-footer">
+                <p id="cart-total">Total: ₦0</p>
+                <button id="pay-btn">Proceed to Pay</button>
+            </div>
         </div>
 
         <!-- PAYMENT MODAL -->
