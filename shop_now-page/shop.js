@@ -290,17 +290,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const query = `${address}, ${lga}, ${state}, Nigeria`;
     const encodedQuery = encodeURIComponent(query);
 
+    // Step 1: Geocode with fallbacks
+    let customerLat, customerLng;
+    const attempts = [
+      `${address}, ${lga}, ${state}, Nigeria`,
+      `${lga}, ${state}, Nigeria`,
+      `${state}, Nigeria`
+    ];
+
+    let found = false;
+    for (const attempt of attempts) {
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const geoData = await geoRes.json();
+      if (geoData.length) {
+        customerLat = parseFloat(geoData[0].lat);
+        customerLng = parseFloat(geoData[0].lon);
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) throw new Error('Location not found. Try a nearby landmark or junction name instead.');
+
     // Step 1: Geocode customer address
-    const geoRes = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=1`,
-      { headers: { 'Accept-Language': 'en' } }
-    );
-    const geoData = await geoRes.json();
+    // const geoRes = await fetch(
+    //   `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&limit=1`,
+    //   { headers: { 'Accept-Language': 'en' } }
+    // );
+    // const geoData = await geoRes.json();
 
-    if (!geoData.length) throw new Error('Address not found. Please be more specific.');
+    // if (!geoData.length) throw new Error('Address not found. Please be more specific.');
 
-    const customerLat = parseFloat(geoData[0].lat);
-    const customerLng = parseFloat(geoData[0].lon);
+    // const customerLat = parseFloat(geoData[0].lat);
+    // const customerLng = parseFloat(geoData[0].lon);
 
     // Step 2: Find nearby busy public spots (junctions, markets, bus stops)
     const types = ['junction', 'bus_stop', 'marketplace'];
