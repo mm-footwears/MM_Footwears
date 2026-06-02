@@ -302,18 +302,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let customerLat, customerLng;
     const geoAttempts = [
       `${district}, ${lga}, ${state}, Nigeria`,
+      `${district} ${lga} ${state} Nigeria`,
+      `${district}, ${state}, Nigeria`,
       `${lga}, ${state}, Nigeria`,
       `${state}, Nigeria`
     ];
+    // const geoAttempts = [
+    //   `${district}, ${lga}, ${state}, Nigeria`,
+    //   `${lga}, ${state}, Nigeria`,
+    //   `${state}, Nigeria`
+    // ];
 
     for (const attempt of geoAttempts) {
       try {
         const ctrl = new AbortController();
         const tid = setTimeout(() => ctrl.abort(), 15000);
+
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=10`,
           { headers: nominatimHeaders, signal: ctrl.signal }
         );
+        // const res = await fetch(
+        //   `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
+        //   { headers: nominatimHeaders, signal: ctrl.signal }
+        // );
+
         clearTimeout(tid);
         const data = await res.json();
         if (data.length) {
