@@ -19,7 +19,7 @@
   box-shadow: 0 10px 100px rgb(0, 0, 0);
   z-index: 1000;
   font-size: 16px;
-  border: 8px solid hsl(198, 99%, 32%);
+  border: 6px solid hsl(198, 99%, 32%);
   height: fit-content;
   max-height: 80vh;
   overflow-y: auto;
@@ -214,13 +214,13 @@
 
 #waybill-form {
   padding: 0 16px;
-  max-height: 600px;
   overflow: hidden;
   transition: max-height 0.4s ease, padding 0.3s ease;
+  height: fit-content;
 }
 
 #waybill-form.waybill-collapsed {
-  max-height: 0;
+  max-height: 0px;
   padding: 0 16px;
 }
 
