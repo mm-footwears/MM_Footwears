@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let overpassSuccess = false;
     const radius = 6000; // 6km radius
     const overpassQuery = `
-      [out:json][timeout:25];
+      [out:json][timeout:30];
       (
         node["place"~"neighbourhood|suburb|village|town|quarter"](around:${radius},${customerLat},${customerLng});
         node["amenity"~"marketplace|police|hospital|bank|fuel"](around:${radius},${customerLat},${customerLng});
@@ -359,19 +359,19 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 22000);
-      
-      const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'data=' + encodeURIComponent(overpassQuery),
-        signal: ctrl.signal
-      });
-      // const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
+
+      // const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
       //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ query: overpassQuery }),
+      //   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      //   body: 'data=' + encodeURIComponent(overpassQuery),
       //   signal: ctrl.signal
       // });
+      const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: overpassQuery }),
+        signal: ctrl.signal
+      });
       clearTimeout(tid);
 
       if (overpassRes.ok) {
