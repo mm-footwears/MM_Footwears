@@ -378,13 +378,21 @@ document.addEventListener('DOMContentLoaded', () => {
           return matrix[b.length][a.length];
         }
 
+        // let bestMatch = null;
+        // let bestScore = Infinity;
         let bestMatch = null;
-        let bestScore = Infinity;
+        let bestSimilarity = 0;
 
         for (const place of data) {
-          const placeName =
+          // const placeName =
+          //   (place.display_name || '')
+          //     .toLowerCase();
+          const placeWords =
             (place.display_name || '')
-              .toLowerCase();
+              .toLowerCase()
+              .replace(/,/g, ' ')
+              .split(/\s+/)
+              .filter(Boolean);
           // const placeName =
           //   (place.display_name || '')
           //     .split(',')[0]
@@ -394,39 +402,66 @@ document.addEventListener('DOMContentLoaded', () => {
           const districtWords =
             district.toLowerCase().split(/\s+/);
 
-          let score = 999;
+          let highestSimilarityForPlace = 0;
 
-          for (const word of districtWords) {
-            if (placeName.includes(word)) {
-              score = 0;
-              break;
+          for (const districtWord of districtWords) {
+            for (const placeWord of placeWords) {
+
+              const similarity =
+                1 -
+                (
+                  levenshtein(districtWord, placeWord) /
+                  Math.max(
+                    districtWord.length,
+                    placeWord.length
+                  )
+                );
+
+              highestSimilarityForPlace = Math.max(
+                highestSimilarityForPlace,
+                similarity
+              );
             }
-
-            score = Math.min(
-              score,
-              levenshtein(word, placeName)
-            );
           }
-          // const score = levenshtein(
-          //   district.toLowerCase(),
-          //   placeName
-          // );
 
-        console.log(
-          district,
-          '=>',
-          place.display_name,
-          'score:',
-          score
-        );
-
-          if (score < bestScore) {
-            bestScore = score;
+          if (highestSimilarityForPlace > bestSimilarity) {
+            bestSimilarity = highestSimilarityForPlace;
             bestMatch = place;
           }
+          // const similarity =
+          //   1 - (
+          //     levenshtein(districtWord, placeWord) /
+          //     Math.max(districtWord.length, placeWord.length)
+          //   );
+          // const districtWords =
+          //   district.toLowerCase().split(/\s+/);
+
+          // let score = 999;
+
+          // for (const districtWord of districtWords) {
+          //   for (const placeWord of placeWords) {
+
+          //     if (placeWord === districtWord) {
+          //       score = 0;
+          //       break;
+          //     }
+
+          //     score = Math.min(
+          //       score,
+          //       levenshtein(districtWord, placeWord)
+          //     );
+          //   }
+          // }
+
+          // if (score < bestScore) {
+          //   bestScore = score;
+          //   bestMatch = place;
+          // }
         }
 
-        if (bestMatch && bestScore <= 8) {
+        // if (bestMatch && bestScore <= 8) {
+        // if (bestSimilarity >= 0.8){
+        if (bestMatch && bestSimilarity >= 0.8) {
           customerLat = parseFloat(bestMatch.lat);
           customerLng = parseFloat(bestMatch.lon);
 
@@ -462,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Step 2: Geographic radius search via Overpass — finds real mapped places near customer coords
     let overpassSuccess = false;
-    const radius = 6000; // 6km radius
+    const radius = 10000; // 10km radius
     const overpassQuery = `
       [out:json][timeout:30];
       (
