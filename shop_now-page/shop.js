@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const attempt of geoAttempts) {
       try {
         const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), 8000);
+        const tid = setTimeout(() => ctrl.abort(), 15000);
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
           { headers: nominatimHeaders, signal: ctrl.signal }
@@ -324,7 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) { continue; }
     }
 
-    if (!customerLat) throw new Error('Location not found. Try a different district name.');
+    // if (!customerLat) throw new Error('Location not found. Try a different district name.');
+
+    if (customerLat === undefined) throw new Error('Location not found. Try a different district name.');
 
     const results = [];
 
@@ -358,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 22000);
+      const tid = setTimeout(() => ctrl.abort(), 15000);
 
       // const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
       //   method: 'POST',
@@ -413,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
       for (const type of types) {
         try {
           const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 8000);
+          const tid = setTimeout(() => ctrl.abort(), 15000);
           const nearRes = await fetch(
             `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${type} ${district} ${lga} ${state} Nigeria`)}&format=json&limit=5`,
             { headers: nominatimHeaders, signal: ctrl.signal }
