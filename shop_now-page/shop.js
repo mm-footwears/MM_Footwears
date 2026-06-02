@@ -384,14 +384,41 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const place of data) {
           const placeName =
             (place.display_name || '')
-              .split(',')[0]
-              .trim()
               .toLowerCase();
+          // const placeName =
+          //   (place.display_name || '')
+          //     .split(',')[0]
+          //     .trim()
+          //     .toLowerCase();
 
-          const score = levenshtein(
-            district.toLowerCase(),
-            placeName
-          );
+          const districtWords =
+            district.toLowerCase().split(/\s+/);
+
+          let score = 999;
+
+          for (const word of districtWords) {
+            if (placeName.includes(word)) {
+              score = 0;
+              break;
+            }
+
+            score = Math.min(
+              score,
+              levenshtein(word, placeName)
+            );
+          }
+          // const score = levenshtein(
+          //   district.toLowerCase(),
+          //   placeName
+          // );
+
+        console.log(
+          district,
+          '=>',
+          place.display_name,
+          'score:',
+          score
+        );
 
           if (score < bestScore) {
             bestScore = score;
