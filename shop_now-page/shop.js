@@ -338,8 +338,84 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // if (!customerLat) throw new Error('Location not found. Try a different district name.');
+    // if (customerLat === undefined) throw new Error('Location not found. Try a different district name.');
+    // Added fuzzy matching fallback for district names that don't geocode directly (common in OSM data)
+    if (customerLat === undefined) {
 
-    if (customerLat === undefined) throw new Error('Location not found. Try a different district name.');
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 15000);
+
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(`${lga} ${state} Nigeria`)}&format=json&limit=50`,
+          { headers: nominatimHeaders, signal: ctrl.signal }
+        );
+
+        clearTimeout(tid);
+
+        const data = await res.json();
+
+        function levenshtein(a, b) {
+          const matrix = [];
+
+          for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+          for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+          for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+              if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+              } else {
+                matrix[i][j] = Math.min(
+                  matrix[i - 1][j - 1] + 1,
+                  matrix[i][j - 1] + 1,
+                  matrix[i - 1][j] + 1
+                );
+              }
+            }
+          }
+
+          return matrix[b.length][a.length];
+        }
+
+        let bestMatch = null;
+        let bestScore = Infinity;
+
+        for (const place of data) {
+          const placeName =
+            (place.display_name || '')
+              .split(',')[0]
+              .trim()
+              .toLowerCase();
+
+          const score = levenshtein(
+            district.toLowerCase(),
+            placeName
+          );
+
+          if (score < bestScore) {
+            bestScore = score;
+            bestMatch = place;
+          }
+        }
+
+        if (bestMatch && bestScore <= 8) {
+          customerLat = parseFloat(bestMatch.lat);
+          customerLng = parseFloat(bestMatch.lon);
+
+          console.log(
+            `Fuzzy matched "${district}" -> "${bestMatch.display_name}"`
+          );
+        }
+
+      } catch (e) {
+        console.warn('Fuzzy fallback failed');
+      }
+    }
+
+    if (customerLat === undefined) {
+      throw new Error('Location not found. Try a different district name.');
+  }
 
     const results = [];
 
