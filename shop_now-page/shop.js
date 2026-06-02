@@ -539,36 +539,36 @@ document.addEventListener('DOMContentLoaded', () => {
           return true;
         });
 
-        const withDistance = unique
-          .map(e => ({
-            name: e.tags.name,
-            fullName: e.tags.name,
-            lat: e.lat,
-            lng: e.lon,
-            distanceFromShop: calcDistance(
-              shopSettings.lat,
-              shopSettings.lng,
-              e.lat,
-              e.lon
-            ),
-            distanceFromCustomer: calcDistance(
-              customerLat,
-              customerLng,
-              e.lat,
-              e.lon
-            ),
-            isShop: false
-          }))
-          .filter(p => p.distanceFromCustomer <= 10); // Only consider points within 8km of customer
-        // const withDistance = unique.map(e => ({
-        //   name: e.tags.name,
-        //   fullName: e.tags.name,
-        //   lat: e.lat,
-        //   lng: e.lon,
-        //   distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, e.lat, e.lon),
-        //   distanceFromCustomer: calcDistance(customerLat, customerLng, e.lat, e.lon),
-        //   isShop: false
-        // }));
+        // const withDistance = unique
+        //   .map(e => ({
+        //     name: e.tags.name,
+        //     fullName: e.tags.name,
+        //     lat: e.lat,
+        //     lng: e.lon,
+        //     distanceFromShop: calcDistance(
+        //       shopSettings.lat,
+        //       shopSettings.lng,
+        //       e.lat,
+        //       e.lon
+        //     ),
+        //     distanceFromCustomer: calcDistance(
+        //       customerLat,
+        //       customerLng,
+        //       e.lat,
+        //       e.lon
+        //     ),
+        //     isShop: false
+        //   }))
+        //   .filter(p => p.distanceFromCustomer <= 8);
+        const withDistance = unique.map(e => ({
+          name: e.tags.name,
+          fullName: e.tags.name,
+          lat: e.lat,
+          lng: e.lon,
+          distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, e.lat, e.lon),
+          distanceFromCustomer: calcDistance(customerLat, customerLng, e.lat, e.lon),
+          isShop: false
+        }));
 
         withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
         const maxPoints = distanceToShop < 3 ? 3 : 4;
