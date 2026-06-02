@@ -307,11 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
       `${lga}, ${state}, Nigeria`,
       `${state}, Nigeria`
     ];
-    // const geoAttempts = [
-    //   `${district}, ${lga}, ${state}, Nigeria`,
-    //   `${lga}, ${state}, Nigeria`,
-    //   `${state}, Nigeria`
-    // ];
 
     for (const attempt of geoAttempts) {
       try {
@@ -322,10 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=10`,
           { headers: nominatimHeaders, signal: ctrl.signal }
         );
-        // const res = await fetch(
-        //   `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
-        //   { headers: nominatimHeaders, signal: ctrl.signal }
-        // );
 
         clearTimeout(tid);
         const data = await res.json();
@@ -337,9 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) { continue; }
     }
 
-    // if (!customerLat) throw new Error('Location not found. Try a different district name.');
-    // if (customerLat === undefined) throw new Error('Location not found. Try a different district name.');
-    // Added fuzzy matching fallback for district names that don't geocode directly (common in OSM data)
     if (customerLat === undefined) {
 
       try {
@@ -378,26 +366,16 @@ document.addEventListener('DOMContentLoaded', () => {
           return matrix[b.length][a.length];
         }
 
-        // let bestMatch = null;
-        // let bestScore = Infinity;
         let bestMatch = null;
         let bestSimilarity = 0;
 
         for (const place of data) {
-          // const placeName =
-          //   (place.display_name || '')
-          //     .toLowerCase();
           const placeWords =
             (place.display_name || '')
               .toLowerCase()
               .replace(/,/g, ' ')
               .split(/\s+/)
               .filter(Boolean);
-          // const placeName =
-          //   (place.display_name || '')
-          //     .split(',')[0]
-          //     .trim()
-          //     .toLowerCase();
 
           const districtWords =
             district.toLowerCase().split(/\s+/);
@@ -428,39 +406,8 @@ document.addEventListener('DOMContentLoaded', () => {
             bestSimilarity = highestSimilarityForPlace;
             bestMatch = place;
           }
-          // const similarity =
-          //   1 - (
-          //     levenshtein(districtWord, placeWord) /
-          //     Math.max(districtWord.length, placeWord.length)
-          //   );
-          // const districtWords =
-          //   district.toLowerCase().split(/\s+/);
-
-          // let score = 999;
-
-          // for (const districtWord of districtWords) {
-          //   for (const placeWord of placeWords) {
-
-          //     if (placeWord === districtWord) {
-          //       score = 0;
-          //       break;
-          //     }
-
-          //     score = Math.min(
-          //       score,
-          //       levenshtein(districtWord, placeWord)
-          //     );
-          //   }
-          // }
-
-          // if (score < bestScore) {
-          //   bestScore = score;
-          //   bestMatch = place;
-          // }
         }
 
-        // if (bestMatch && bestScore <= 8) {
-        // if (bestSimilarity >= 0.8){
         if (bestMatch && bestSimilarity >= 0.8) {
           customerLat = parseFloat(bestMatch.lat);
           customerLng = parseFloat(bestMatch.lon);
@@ -513,12 +460,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 15000);
 
-      // const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      //   body: 'data=' + encodeURIComponent(overpassQuery),
-      //   signal: ctrl.signal
-      // });
       const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -539,15 +480,27 @@ document.addEventListener('DOMContentLoaded', () => {
           return true;
         });
 
-        const withDistance = unique.map(e => ({
-          name: e.tags.name,
-          fullName: e.tags.name,
-          lat: e.lat,
-          lng: e.lon,
-          distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, e.lat, e.lon),
-          distanceFromCustomer: calcDistance(customerLat, customerLng, e.lat, e.lon),
-          isShop: false
-        }));
+        const withDistance = unique
+          .map(e => ({
+            name: e.tags.name,
+            fullName: e.tags.name,
+            lat: e.lat,
+            lng: e.lon,
+            distanceFromShop: calcDistance(
+              shopSettings.lat,
+              shopSettings.lng,
+              e.lat,
+              e.lon
+            ),
+            distanceFromCustomer: calcDistance(
+              customerLat,
+              customerLng,
+              e.lat,
+              e.lon
+            ),
+            isShop: false
+          }))
+          .filter(p => p.distanceFromCustomer <= 7);
 
         withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
         const maxPoints = distanceToShop < 3 ? 3 : 4;
@@ -598,225 +551,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return results;
   }
-  // async function findDeliveryPoints(address, district, lga, state) {
-  //   // Step 1: Geocode with 5-step fallbacks
-  //   let customerLat, customerLng;
-  //   const attempts = [
-  //     `${address}, ${district}, ${lga}, ${state}, Nigeria`,
-  //     `${district}, ${lga}, ${state}, Nigeria`,
-  //     `${lga}, ${state}, Nigeria`,
-  //     `${state}, Nigeria`
-  //   ];
-
-  //   let found = false;
-  //   for (const attempt of attempts) {
-  //     const geoRes = await fetch(
-  //       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
-  //       { headers: { 'Accept-Language': 'en' } }
-  //     );
-  //     const geoData = await geoRes.json();
-  //     if (geoData.length) {
-  //       customerLat = parseFloat(geoData[0].lat);
-  //       customerLng = parseFloat(geoData[0].lon);
-  //       found = true;
-  //       break;
-  //     }
-  //   }
-
-  //   if (!found) throw new Error('Location not found. Try a nearby landmark or junction name instead.');
-
-  //   const results = [];
-
-  //   // Check if customer is within 3km of shop
-  //   const distanceToShop = calcDistance(customerLat, customerLng, shopSettings.lat, shopSettings.lng);
-  //   if (distanceToShop < 3) {
-  //     results.push({
-  //       name: 'M&M Footwears Shop (Pickup Only)',
-  //       fullName: 'M&M Footwears Shop',
-  //       lat: shopSettings.lat,
-  //       lng: shopSettings.lng,
-  //       distanceFromShop: 0,
-  //       distanceFromCustomer: distanceToShop,
-  //       isShop: true,
-  //       fee: 0
-  //     });
-  //   }
-
-  //   // Step 2: Use Overpass API — query real OSM nodes near customer coords
-  //   // Search radius: 5km, looking for highway=junction, amenity=marketplace, highway=bus_stop, amenity=police
-  //   const radius = 5000; // meters
-  //   const overpassQuery = `
-  //     [out:json][timeout:15];
-  //     (
-  //       node["highway"="bus_stop"](around:${radius},${customerLat},${customerLng});
-  //       node["amenity"="marketplace"](around:${radius},${customerLat},${customerLng});
-  //       node["amenity"="police"](around:${radius},${customerLat},${customerLng});
-  //       node["junction"="yes"](around:${radius},${customerLat},${customerLng});
-  //       node["place"="neighbourhood"](around:${radius},${customerLat},${customerLng});
-  //       node["place"="suburb"](around:${radius},${customerLat},${customerLng});
-  //       node["place"="village"](around:${radius},${customerLat},${customerLng});
-  //       node["place"="town"](around:${radius},${customerLat},${customerLng});
-  //     );
-  //     out body 30;
-  //   `;
-
-  //   // const overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-      
-  //   // const overpassRes = await fetch('https://overpass.kumi.systems/api/interpreter', {
-  //   //   method: 'POST',
-  //   //   body: 'data=' + encodeURIComponent(overpassQuery)
-  //   // });
-  
-  //   // const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
-  //   //   method: 'POST',
-  //   //   headers: { 'Content-Type': 'application/json' },
-  //   //   body: JSON.stringify({ query: overpassQuery })
-  //   // });
-
-  //   const controller = new AbortController();
-  //   const timeoutId = setTimeout(() => controller.abort(), 35000);
-
-  //   let overpassData;
-  //   try {
-  //     const overpassRes = await fetch(`${RAILWAY_API}/api/overpass`, {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ query: overpassQuery }),
-  //       signal: controller.signal
-  //     });
-  //     clearTimeout(timeoutId);
-  //     overpassData = await overpassRes.json();
-  //   } catch (err) {
-  //     clearTimeout(timeoutId);
-  //     if (err.name === 'AbortError') {
-  //       throw new Error('Search timed out. Please try again.');
-  //     }
-  //     throw err;
-  //   }
-
-  //   // const overpassData = await overpassRes.json();
-
-  //   const elements = overpassData.elements || [];
-
-  //   // Filter: must have a name tag
-  //   const named = elements.filter(e => e.tags && e.tags.name);
-
-  //   // Deduplicate by name
-  //   const seenNames = new Set();
-  //   const unique = named.filter(e => {
-  //     const n = e.tags.name.toLowerCase();
-  //     if (seenNames.has(n)) return false;
-  //     seenNames.add(n);
-  //     return true;
-  //   });
-
-  //   const withDistance = unique.map(e => ({
-  //     name: e.tags.name,
-  //     fullName: e.tags.name + (e.tags['addr:full'] ? ', ' + e.tags['addr:full'] : ''),
-  //     lat: e.lat,
-  //     lng: e.lon,
-  //     distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, e.lat, e.lon),
-  //     distanceFromCustomer: calcDistance(customerLat, customerLng, e.lat, e.lon),
-  //     isShop: false
-  //   }));
-
-  //   // Sort by closest to customer
-  //   withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
-
-  //   const maxPoints = distanceToShop < 3 ? 3 : 4;
-  //   results.push(...withDistance.slice(0, maxPoints));
-
-  //   return results;
-  // }
-  // async function findDeliveryPoints(address, district, lga, state) {
-  //   // Step 1: Geocode with 5-step fallbacks
-  //   let customerLat, customerLng;
-  //   const attempts = [
-  //     `${address}, ${district}, ${lga}, ${state}, Nigeria`,
-  //     `${district}, ${lga}, ${state}, Nigeria`,
-  //     `${lga}, ${state}, Nigeria`,
-  //     `${state}, Nigeria`,
-  //     `Nigeria`
-  //   ];
-
-  //   let found = false;
-  //   for (const attempt of attempts) {
-  //     const geoRes = await fetch(
-  //       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(attempt)}&format=json&limit=1`,
-  //       { headers: { 'Accept-Language': 'en' } }
-  //     );
-  //     const geoData = await geoRes.json();
-  //     if (geoData.length) {
-  //       customerLat = parseFloat(geoData[0].lat);
-  //       customerLng = parseFloat(geoData[0].lon);
-  //       found = true;
-  //       break;
-  //     }
-  //   }
-
-  //   if (!found) throw new Error('Location not found. Try a nearby landmark or junction name instead.');
-
-  //   // Check if customer is within 3km of shop — add shop as first option
-  //   const distanceToShop = calcDistance(customerLat, customerLng, shopSettings.lat, shopSettings.lng);
-  //   const results = [];
-
-  //   if (distanceToShop < 3) {
-  //     results.push({
-  //       name: 'M&M Footwears Shop (Pickup Only)',
-  //       fullName: 'M&M Footwears Shop',
-  //       lat: shopSettings.lat,
-  //       lng: shopSettings.lng,
-  //       distanceFromShop: 0,
-  //       distanceFromCustomer: distanceToShop,
-  //       isShop: true,
-  //       fee: 0
-  //     });
-  //   }
-
-  //   // Step 2: Find nearby delivery-suitable public spots
-  //   // Include junctions, bus stops, markets, police stations, government offices
-  //   const types = ['junction', 'bus_stop', 'marketplace', 'police', 'government_office'];
-  //   let allPoints = [];
-
-  //   for (const type of types) {
-  //     const nearRes = await fetch(
-  //       `https://nominatim.openstreetmap.org/search?q=${type}+${lga}+${state}+Nigeria&format=json&limit=5&addressdetails=1`,
-  //       { headers: { 'Accept-Language': 'en' } }
-  //     );
-  //     const nearData = await nearRes.json();
-  //     allPoints = allPoints.concat(nearData);
-  //   }
-
-  //   // Remove duplicates and calculate distances
-  //   const seen = new Set();
-  //   const unique = allPoints.filter(p => {
-  //     if (seen.has(p.place_id)) return false;
-  //     seen.add(p.place_id);
-  //     return true;
-  //   });
-
-  //   const withDistance = unique
-  //     .map(p => ({
-  //       name: p.display_name.split(',')[0],
-  //       fullName: p.display_name,
-  //       lat: parseFloat(p.lat),
-  //       lng: parseFloat(p.lon),
-  //       distanceFromShop: calcDistance(shopSettings.lat, shopSettings.lng, parseFloat(p.lat), parseFloat(p.lon)),
-  //       distanceFromCustomer: calcDistance(customerLat, customerLng, parseFloat(p.lat), parseFloat(p.lon)),
-  //       isShop: false
-  //     }))
-  //     // Filter out points that are too far (>7km from customer)
-  //     .filter(p => p.distanceFromCustomer <= 7);
-
-  //   // Sort by closest to customer first
-  //   withDistance.sort((a, b) => a.distanceFromCustomer - b.distanceFromCustomer);
-
-  //   // Add up to 4 nearby points (or 3 if shop was included)
-  //   const maxNearbyPoints = distanceToShop < 3 ? 3 : 4;
-  //   results.push(...withDistance.slice(0, maxNearbyPoints));
-
-  //   return results;
-  // }
 
   // Handle Find Delivery Points button
   document.getElementById('wb-find-btn').addEventListener('click', async () => {
@@ -864,8 +598,9 @@ document.addEventListener('DOMContentLoaded', () => {
           ${shopLabel}
           <p class="wb-point-name">📍 ${point.name}</p>
           <p class="wb-point-dist">~${point.distanceFromShop.toFixed(1)} km from shop</p>
+          <p class="wb-point-dist">~${point.distanceFromCustomer.toFixed(1)} km from you</p>
           <p class="wb-point-fee">Delivery fee: <span>₦${formatPrice(fee)}</span></p>
-        `;
+          `;
 
         card.addEventListener('click', () => {
           // Deselect all
