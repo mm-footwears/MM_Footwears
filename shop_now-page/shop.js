@@ -111,7 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
   /* =========================
      FETCH SHOES
   ========================== */
-  const RAILWAY_API = 'https://mm-footwears-admintwo-production.up.railway.app';
+  // const RAILWAY_API = 'https://mm-footwears-admintwo-production.up.railway.app'; // is no more free
+  const RAILWAY_API = 'https://mm-footwears-backend.mmfootwears231.workers.dev'; // free and fast, cloudflare workers.
 
   let shopSettings = { lat: 10.468322, lng: 7.471292, pricePerTenKm: 500 };
   let waybillFee = 0;
