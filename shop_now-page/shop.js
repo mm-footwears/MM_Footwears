@@ -122,7 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const CACHE_TIME_KEY = 'mm_shoes_cache_time';
   // const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   // const CACHE_TTL = 30 * 1000; // 30 seconds
-  const CACHE_TTL = 15 * 1000; // 15 seconds
+  // const CACHE_TTL = 15 * 1000; // 15 seconds
+  const CACHE_TTL = 0; // always fetch fresh
 
   async function fetchShoes() {
     // Try cache first for instant load
